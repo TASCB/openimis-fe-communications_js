@@ -1,8 +1,3 @@
-// The backend runs USE_TZ=False (naive datetimes). Emit a NAIVE local datetime
-// string (no 'Z'/offset) so graphene parses it naive and matches the DB — sending
-// UTC-aware ISO crashes the calendar-aware field ("can't subtract offset-naive and
-// offset-aware datetimes"). Date-only input keeps the calendar day (start 00:00:00,
-// end 23:59:59).
 export function toISO(value, endOfDay = false) {
   if (!value) return null;
   const pad = (n) => String(n).padStart(2, '0');

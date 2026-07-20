@@ -24,15 +24,17 @@ class ActivityHeadPanel extends FormPanel {
         </Grid>
         <Divider />
         <Grid container className={classes.item}>
-          <Grid item xs={3} className={classes.item}>
-            <TextInput module="communications" label="communications.code" required readOnly={readOnly}
-              value={a?.code} onChange={(v) => this.updateAttribute('code', v)} />
-          </Grid>
-          <Grid item xs={5} className={classes.item}>
+          {a?.code && (
+            <Grid item xs={3} className={classes.item}>
+              <TextInput module="communications" label="communications.code" readOnly
+                value={a.code} onChange={(v) => this.updateAttribute('code', v)} />
+            </Grid>
+          )}
+          <Grid item xs={a?.code ? 5 : 6} className={classes.item}>
             <TextInput module="communications" label="communications.title" required readOnly={readOnly}
               value={a?.title} onChange={(v) => this.updateAttribute('title', v)} />
           </Grid>
-          <Grid item xs={4} className={classes.item}>
+          <Grid item xs={a?.code ? 4 : 6} className={classes.item}>
             <ActivityTypePicker readOnly={readOnly} withLabel value={a?.activityType}
               onChange={(v) => this.updateAttribute('activityType', v)} />
           </Grid>

@@ -2,12 +2,7 @@ import React from 'react';
 import { Grid, Typography } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 
-/**
- * Shared visual language for the module's profile cards (Training / Trainer /
- * Attendance). Everything is derived from the configured BRAND theme
- * (theme.palette.primary, set via the Django-admin / ModuleConfiguration theme) —
- * no hard-coded colours — so all cards look identical and on-brand.
- */
+
 export const useProfileCardStyles = makeStyles((theme) => {
   const main = theme.palette.primary.main;
   const contrast = theme.palette.primary.contrastText || '#fff';

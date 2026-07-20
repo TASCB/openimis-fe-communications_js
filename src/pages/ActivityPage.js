@@ -10,7 +10,7 @@ import {
   RIGHT_ACTIVITY_UPDATE, RIGHT_ACTIVITY_CREATE, COMMS_ROUTE_ACTIVITY,
 } from '../constants';
 import {
-  fetchActivity, clearActivity, createActivity, updateActivity, transitionActivity,
+  fetchActivity, clearActivity, createActivity, updateActivity, transitionActivity, decId,
 } from '../actions';
 import ActivityHeadPanel from '../components/ActivityHeadPanel';
 import ConflictBanner from '../components/ConflictBanner';
@@ -72,7 +72,7 @@ function ActivityPage({ activityUuid }) {
   ));
 
   const hasHardConflict = (conflicts ?? []).some((c) => c.hard);
-  const mandatoryFilled = edited?.code && edited?.title && edited?.startDatetime && edited?.endDatetime;
+  const mandatoryFilled = edited?.title && edited?.startDatetime && edited?.endDatetime;
   const canSave = () => canEditDetails && mandatoryFilled && !hasHardConflict;
 
   const actions = (!isNew ? (STATUS_ACTIONS[edited?.status] || []) : [])
@@ -120,5 +120,10 @@ function ActivityPage({ activityUuid }) {
     </div>
   );
 }
-const mapStateToProps = (state, props) => ({ activityUuid: props.match.params.activity_uuid });
+// The route param is already the raw UUID (searcher + calendar navigate with the decoded `.id`),
+// so `decId` passes it through; it also tolerates an encoded id without throwing on atob. The
+// backend `id` filter (UUIDField) and child panels (which re-encode via encodeId) both need the raw UUID.
+const mapStateToProps = (state, props) => ({
+  activityUuid: props.match.params.activity_uuid ? decId(props.match.params.activity_uuid) : undefined,
+});
 export default connect(mapStateToProps, null)(ActivityPage);

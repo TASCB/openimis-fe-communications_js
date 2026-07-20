@@ -33,7 +33,6 @@ import {
   uploadPostAttachment, deletePostAttachment,
 } from '../actions';
 
-// Backend PostType enum, styled per design (Alert/Event/General are not backend types).
 const TYPES = ['ANNOUNCEMENT', 'UPDATE', 'MEDIA_HIGHLIGHT', 'NEWSLETTER'];
 const TYPE_META = {
   ANNOUNCEMENT: { color: '#006273', Icon: VolumeUpOutlined },
@@ -41,7 +40,6 @@ const TYPE_META = {
   MEDIA_HIGHLIGHT: { color: '#4f46e5', Icon: PermMediaOutlined },
   NEWSLETTER: { color: '#475569', Icon: EmailOutlined },
 };
-// UI-only until post audience support is added to the backend model.
 const AUDIENCES = ['allStaff', 'regional', 'ict'];
 const MAX_LEN = 1200;
 const CLAMP = 3;
@@ -55,7 +53,6 @@ function formatBytes(n) {
   return `${(b / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-// A short type badge (PDF / IMG / XLS …) + colour, from the filename extension or MIME type.
 function fileKind(name, type) {
   const ext = (name || '').split('.').pop().toLowerCase();
   const t = (type || '').toLowerCase();
@@ -401,7 +398,6 @@ function FeedPage() {
   }, [submitting]);
   useEffect(() => { prev.current = submitting; });
 
-  // After a create/update lands: upload staged files to the resolved post, then publish it.
   useEffect(() => {
     const intent = pending.current;
     if (!intent || fetching) return;

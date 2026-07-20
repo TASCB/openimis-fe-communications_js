@@ -5,6 +5,7 @@ import { useIntl } from 'react-intl';
 import {
   IconButton, Tooltip, Dialog, DialogContent, DialogActions, Button,
 } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import DeleteIcon from '@material-ui/icons/Delete';
 import {
@@ -19,6 +20,24 @@ import ActivityFilter from './ActivityFilter';
 import ActivityStatusChip from './ActivityStatusChip';
 import ActivityProfileCard from './ActivityProfileCard';
 
+const useStyles = makeStyles(() => ({
+  searcher: {
+    '& table': { tableLayout: 'fixed', minWidth: '100%' },
+    '& table th, & table td': { whiteSpace: 'nowrap' },
+    '& table th:nth-child(-n+7), & table td:nth-child(-n+7)': { overflow: 'hidden', textOverflow: 'ellipsis' },
+    '& table th:nth-child(1), & table td:nth-child(1)': { width: 130 },
+    '& table th:nth-child(2), & table td:nth-child(2)': { width: 240 },
+    '& table th:nth-child(3), & table td:nth-child(3)': { width: 180 },
+    '& table th:nth-child(4), & table td:nth-child(4)': { width: 110 },
+    '& table th:nth-child(5), & table td:nth-child(5)': { width: 120 },
+    '& table th:nth-child(6), & table td:nth-child(6)': { width: 120 },
+    '& table th:nth-child(7), & table td:nth-child(7)': { width: 170 },
+    '& table th:nth-child(8), & table td:nth-child(8)': { width: 56 },
+    '& table th:nth-child(9), & table td:nth-child(9)': { width: 56 },
+    '& table th:last-child, & table td:last-child': { width: 32 },
+  },
+}));
+
 function ActivitySearcher({
   fetchActivities, deleteActivity, journalize, coreConfirm, clearConfirm, confirmed,
   fetchingActivities, fetchedActivities, errorActivities, activities,
@@ -26,6 +45,7 @@ function ActivitySearcher({
 }) {
   const history = useHistory();
   const intl = useIntl();
+  const classes = useStyles();
   const modulesManager = useModulesManager();
   const { formatMessage, formatMessageWithValues } = useTranslations('communications', modulesManager);
   const rights = useSelector((s) => s.core.user.i_user.rights ?? []);
@@ -56,36 +76,53 @@ function ActivitySearcher({
   }, [submittingMutation]);
   useEffect(() => { prev.current = submittingMutation; });
 
-  const headers = () => [
-    'communications.code', 'communications.title', 'communications.activityType', 'communications.status',
-    'communications.startDatetime', 'communications.endDatetime', 'communications.venue', 'emptyLabel',
-  ];
-  const sorts = () => [
-    ['code', true], ['title', true], ['activityType', true], ['status', true],
-    ['startDatetime', true], ['endDatetime', true], null, null,
-  ];
+  // One column per action (view, delete) so the icons align and never wrap — openIMIS fe-individual pattern.
+  const headers = () => {
+    const h = [
+      'communications.code', 'communications.title', 'communications.activityType', 'communications.status',
+      'communications.startDatetime', 'communications.endDatetime', 'communications.venue',
+    ];
+    h.push('emptyLabel');
+    if (rights.includes(RIGHT_ACTIVITY_DELETE)) h.push('emptyLabel'); 
+    h.push('emptyLabel');
+    return h;
+  };
+  const sorts = () => {
+    const s = [
+      ['code', true], ['title', true], ['activityType', true], ['status', true],
+      ['startDatetime', true], ['endDatetime', true], null,
+    ];
+    s.push(null);
+    if (rights.includes(RIGHT_ACTIVITY_DELETE)) s.push(null);
+    s.push(null);
+    return s;
+  };
   const fetch = (p) => { setParams(p); return fetchActivities(modulesManager, p); };
-  const itemFormatters = () => [
-    (a) => a?.code,
-    (a) => a?.title,
-    (a) => (a?.activityType ? formatMessage(`communications.activityType.${a.activityType}`) : ''),
-    (a) => <ActivityStatusChip status={a?.status} />,
-    (a) => (a?.startDatetime ? formatDateFromISO(modulesManager, intl, a.startDatetime) : ''),
-    (a) => (a?.endDatetime ? formatDateFromISO(modulesManager, intl, a.endDatetime) : ''),
-    (a) => a?.venue ?? '',
-    (a) => (
-      <>
-        <Tooltip title={formatMessage('viewDetailsButton.tooltip')}>
-          <IconButton onClick={() => setViewed(a)}><VisibilityIcon /></IconButton>
+  const itemFormatters = () => {
+    const f = [
+      (a) => a?.code,
+      (a) => a?.title,
+      (a) => (a?.activityType ? formatMessage(`communications.activityType.${a.activityType}`) : ''),
+      (a) => <ActivityStatusChip status={a?.status} />,
+      (a) => (a?.startDatetime ? formatDateFromISO(modulesManager, intl, a.startDatetime) : ''),
+      (a) => (a?.endDatetime ? formatDateFromISO(modulesManager, intl, a.endDatetime) : ''),
+      (a) => a?.venue ?? '',
+    ];
+    f.push((a) => (
+      <Tooltip title={formatMessage('viewDetailsButton.tooltip')}>
+        <IconButton onClick={() => setViewed(a)}><VisibilityIcon /></IconButton>
+      </Tooltip>
+    ));
+    if (rights.includes(RIGHT_ACTIVITY_DELETE)) {
+      f.push((a) => (![ACTIVITY_STATUS.ARCHIVED].includes(a?.status) ? (
+        <Tooltip title={formatMessage('deleteButton.tooltip')}>
+          <IconButton onClick={() => setToDelete(a)}><DeleteIcon /></IconButton>
         </Tooltip>
-        {rights.includes(RIGHT_ACTIVITY_DELETE) && ![ACTIVITY_STATUS.ARCHIVED].includes(a?.status) && (
-          <Tooltip title={formatMessage('deleteButton.tooltip')}>
-            <IconButton onClick={() => setToDelete(a)}><DeleteIcon /></IconButton>
-          </Tooltip>
-        )}
-      </>
-    ),
-  ];
+      ) : null));
+    }
+    f.push(() => '');
+    return f;
+  };
   const filterPane = ({ filters, onChangeFilters }) => <ActivityFilter filters={filters} onChangeFilters={onChangeFilters} />;
 
   return (
@@ -99,24 +136,26 @@ function ActivitySearcher({
           <Button onClick={() => setViewed(null)}>{formatMessage('communications.close')}</Button>
         </DialogActions>
       </Dialog>
-      <Searcher
-        module="communications"
-        FilterPane={filterPane}
-        fetch={fetch}
-        items={activities}
-        itemsPageInfo={activitiesPageInfo}
-        fetchedItems={fetchedActivities}
-        fetchingItems={fetchingActivities}
-        errorItems={errorActivities}
-        tableTitle={formatMessageWithValues('communications.searcherResultsTitle', { activitiesTotalCount })}
-        headers={headers}
-        itemFormatters={itemFormatters}
-        sorts={sorts}
-        rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
-        defaultPageSize={DEFAULT_PAGE_SIZE}
-        rowIdentifier={(a) => a.id}
-        onDoubleClick={(a) => setViewed(a)}
-      />
+      <div className={classes.searcher}>
+        <Searcher
+          module="communications"
+          FilterPane={filterPane}
+          fetch={fetch}
+          items={activities}
+          itemsPageInfo={activitiesPageInfo}
+          fetchedItems={fetchedActivities}
+          fetchingItems={fetchingActivities}
+          errorItems={errorActivities}
+          tableTitle={formatMessageWithValues('communications.searcherResultsTitle', { activitiesTotalCount })}
+          headers={headers}
+          itemFormatters={itemFormatters}
+          sorts={sorts}
+          rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
+          defaultPageSize={DEFAULT_PAGE_SIZE}
+          rowIdentifier={(a) => a.id}
+          onDoubleClick={(a) => setViewed(a)}
+        />
+      </div>
     </>
   );
 }

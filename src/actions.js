@@ -36,7 +36,6 @@ const str = (k, v) => (v !== undefined && v !== null && v !== '' ? `${k}: "${for
 const raw = (k, v) => (v !== undefined && v !== null && v !== '' ? `${k}: ${v}` : '');
 const list = (k, v) => (Array.isArray(v) && v.length ? `${k}: [${v.map((x) => `"${x}"`).join(',')}]` : '');
 
-// MUTATION inputs (UUID/Int) need the raw pk → decode.
 export const decId = (v) => {
   if (v === undefined || v === null || v === '') return null;
   const s = String(v);
@@ -44,7 +43,7 @@ export const decId = (v) => {
   if (/^[0-9a-f-]{36}$/i.test(s)) return s;
   try { return decodeId(s); } catch (e) { return s; }
 };
-// Connection FK FILTERS are GlobalIDFilters → need the encoded relay id.
+
 export const encId = (typeName, v) => {
   if (v === undefined || v === null || v === '') return null;
   const s = String(v);
@@ -69,10 +68,10 @@ export function fetchActivity(modulesManager, params) {
 }
 export const clearActivity = () => (dispatch) => dispatch({ type: CLEAR(ACTION_TYPE.GET_ACTIVITY) });
 
-function formatActivityGQL(a) {
+function formatActivityGQL(a, includeCode = true) {
   return [
     str('id', a?.id),
-    str('code', a?.code),
+    includeCode ? str('code', a?.code) : null,
     str('title', a?.title),
     str('description', a?.description),
     str('objectiveSummary', a?.objectiveSummary),
@@ -93,12 +92,12 @@ function formatActivityGQL(a) {
 }
 
 export function createActivity(a, label) {
-  const m = formatMutation('createCommunicationActivity', formatActivityGQL(a), label);
+  const m = formatMutation('createCommunicationActivity', formatActivityGQL(a, false), label);
   return graphqlMutation(m.payload, ACTION_TYPE.CREATE_ACTIVITY,
     { clientMutationId: m.clientMutationId, clientMutationLabel: label, requestedDateTime: new Date() });
 }
 export function updateActivity(a, label) {
-  const m = formatMutation('updateCommunicationActivity', formatActivityGQL(a), label);
+  const m = formatMutation('updateCommunicationActivity', formatActivityGQL(a, true), label);
   return graphqlMutation(m.payload, ACTION_TYPE.UPDATE_ACTIVITY,
     { clientMutationId: m.clientMutationId, clientMutationLabel: label, requestedDateTime: new Date() });
 }

@@ -1,13 +1,9 @@
-// Shared, prop-driven calendar used by the Training and Communications modules.
-// Keep this file IDENTICAL in both modules (openimis-fe-training_js and
-// openimis-fe-communications_js). It is presentational only: the page supplies the
-// events, status colours, labels, range-fetch callback and open/create handlers.
 import React, {
   useEffect, useState, useMemo,
 } from 'react';
 import { makeStyles } from '@material-ui/styles';
 import {
-  Paper, Typography, Button, IconButton, Tooltip, Popover, Box,
+  Paper, Typography, Button, IconButton, Tooltip, Popover, Box, Fab,
 } from '@material-ui/core';
 import ChevronLeft from '@material-ui/icons/ChevronLeft';
 import ChevronRight from '@material-ui/icons/ChevronRight';
@@ -17,7 +13,9 @@ import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import ViewListIcon from '@material-ui/icons/ViewList';
 import AddIcon from '@material-ui/icons/Add';
 import EventBusyIcon from '@material-ui/icons/EventBusy';
-import { useTranslations, useModulesManager, ProgressOrError } from '@openimis/fe-core';
+import {
+  useTranslations, useModulesManager, ProgressOrError, withTooltip,
+} from '@openimis/fe-core';
 import {
   startOfMonth, endOfMonth, startOfWeek, addDays,
 } from '../utils/dates';
@@ -41,14 +39,12 @@ const sameDay = (a, b) => a.toDateString() === b.toDateString();
 const VIEWS = ['month', 'week', 'agenda'];
 
 const useStyles = makeStyles((theme) => ({
-  // The page wraps this in `theme.page` (the openIMIS convention) which supplies
-  // the standard 16px page inset; add a little extra breathing room at the top
-  // so the title clears the app bar.
-  root: { paddingTop: theme.spacing(2) },
+    root: { paddingTop: theme.spacing(2) },
   header: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     gap: theme.spacing(2), marginBottom: theme.spacing(3.5), flexWrap: 'wrap',
   },
+  fab: theme.fab,
   headerLeft: { display: 'flex', alignItems: 'center', gap: theme.spacing(1.5) },
   iconWrap: {
     width: 44, height: 44, borderRadius: '50%', display: 'flex',
@@ -160,7 +156,7 @@ function ModuleCalendar({
   const [view, setView] = useState('month');
   const [cursor, setCursor] = useState(new Date());
   const [hidden, setHidden] = useState(() => new Set());
-  const [dayPop, setDayPop] = useState(null); // { anchorEl, day, events }
+  const [dayPop, setDayPop] = useState(null);
   const today = new Date();
 
   const range = useMemo(() => {
@@ -285,13 +281,13 @@ function ModuleCalendar({
               {formatMessageWithValues('calendar.count', { count: visibleEvents.length })}
             </span>
           )}
-          {onCreate && (
-            <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={onCreate} disableElevation>
-              {formatMessage('calendar.new')}
-            </Button>
-          )}
         </div>
       </div>
+
+      {onCreate && withTooltip(
+        <div className={classes.fab}><Fab color="primary" onClick={onCreate}><AddIcon /></Fab></div>,
+        formatMessage('createButton.tooltip'),
+      )}
 
       <Paper className={classes.card}>
         {/* Toolbar */}
@@ -341,11 +337,6 @@ function ModuleCalendar({
             <div className={classes.empty}>
               <EventBusyIcon style={{ fontSize: 56, opacity: 0.5 }} />
               <Typography>{formatMessageWithValues('calendar.empty', { range: rangeLabel })}</Typography>
-              {onCreate && (
-                <Button variant="outlined" color="primary" startIcon={<AddIcon />} onClick={onCreate}>
-                  {formatMessage('calendar.new')}
-                </Button>
-              )}
             </div>
           ) : view === 'agenda' ? (
             <div className={classes.agenda}>
