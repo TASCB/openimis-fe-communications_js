@@ -30,8 +30,11 @@ import {
 import { MODULE_NAME, RIGHT_POST_MANAGE, RIGHT_POST_PUBLISH } from '../constants';
 import {
   fetchPosts, savePost, deletePost, setPostPublished,
-  uploadPostAttachment, deletePostAttachment,
+  uploadPostAttachment, deletePostAttachment, uploadPostInlineImage,
 } from '../actions';
+import RichTextEditor from '../components/RichTextEditor';
+import RichText from '../components/RichText';
+import { htmlToText } from '../components/htmlSanitize';
 
 const TYPES = ['ANNOUNCEMENT', 'UPDATE', 'MEDIA_HIGHLIGHT', 'NEWSLETTER'];
 const TYPE_META = {
@@ -42,7 +45,6 @@ const TYPE_META = {
 };
 const AUDIENCES = ['allStaff', 'regional', 'ict'];
 const MAX_LEN = 1200;
-const CLAMP = 3;
 const postAttachmentUrl = (att, inline) => `${baseApiUrl}/communications/post-attachments/${att.uuid}/download/${inline ? '?inline=1' : ''}`;
 
 function formatBytes(n) {
@@ -103,7 +105,6 @@ const useStyles = makeStyles((theme) => {
       '&:hover': { borderColor: '#c9d4cd' },
       '&:focus': { outline: 'none', borderColor: teal, background: '#fff', boxShadow: `0 0 0 3px ${teal}26` },
     },
-    textarea: { resize: 'vertical', minHeight: 92, lineHeight: 1.5 },
 
     chips: { display: 'flex', flexWrap: 'wrap', gap: 10 },
     chip: {
@@ -173,8 +174,16 @@ const useStyles = makeStyles((theme) => {
     typeTag: { fontWeight: 800, color: ink },
     dot: { color: '#c3cec8' },
     actions: { display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 },
-    body: { color: '#25322c', fontSize: 14.5, lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: '12px 0 0' },
-    bodyClamp: { display: '-webkit-box', WebkitLineClamp: CLAMP, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
+    body: {
+      color: '#25322c', fontSize: 14.5, lineHeight: 1.6, margin: '12px 0 0',
+      '& p': { margin: '0 0 8px' },
+      '& h2': { fontSize: 19, fontWeight: 800, margin: '4px 0 8px' },
+      '& h3': { fontSize: 16.5, fontWeight: 800, margin: '4px 0 8px' },
+      '& ul, & ol': { margin: '0 0 8px', paddingLeft: 22 },
+      '& a': { color: teal, textDecoration: 'underline' },
+      '& img': { maxWidth: '100%', height: 'auto', borderRadius: 8, margin: '4px 0' },
+    },
+    bodyClamp: { maxHeight: 132, overflow: 'hidden', maskImage: 'linear-gradient(#000 70%, transparent)', WebkitMaskImage: 'linear-gradient(#000 70%, transparent)' },
     cardFooter: { display: 'flex', alignItems: 'center', gap: 16, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${border}`, color: muted, fontSize: 13 },
     footerItem: { display: 'inline-flex', alignItems: 'center', gap: 6 },
     delHover: { '&:hover': { color: '#c0392b', background: 'rgba(192,57,43,.08)' } },
@@ -205,9 +214,18 @@ const useStyles = makeStyles((theme) => {
   };
 });
 
+// Backend runs USE_TZ=False / TIME_ZONE=UTC, so timestamps arrive as naive UTC with no
+// tz marker; append Z so the browser parses them as UTC instead of local time.
+function parseDate(iso) {
+  if (!iso) return null;
+  const s = /([zZ]|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : `${iso}Z`;
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 function relTime(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
+  const d = parseDate(iso);
+  if (!d) return '';
   const diff = (Date.now() - d.getTime()) / 1000;
   if (Number.isNaN(diff)) return '';
   if (diff < 60) return 'Just now';
@@ -265,7 +283,7 @@ function PostCard({ ctx, post }) {
   const meta = TYPE_META[post.postType] || TYPE_META.ANNOUNCEMENT;
   const { Icon } = meta;
   const published = post.isPublished;
-  const long = (post.body || '').length > 220 || (post.body || '').split('\n').length > CLAMP;
+  const long = htmlToText(post.body).length > 260 || /<(img|h2|h3|ul|ol)[\s>]/i.test(post.body || '');
 
   return (
     <Paper elevation={0} className={classes.card}>
@@ -323,7 +341,7 @@ function PostCard({ ctx, post }) {
 
       {post.body && (
         <>
-          <div className={`${classes.body} ${!expanded && long ? classes.bodyClamp : ''}`}>{post.body}</div>
+          <RichText html={post.body} className={`${classes.body} ${!expanded && long ? classes.bodyClamp : ''}`} />
           {long && (
             <button type="button" className={classes.linkBtn} style={{ marginTop: 8 }} onClick={() => setExpanded((v) => !v)}>
               {fm(expanded ? 'communications.readLess' : 'communications.readMore')}
@@ -405,7 +423,7 @@ function FeedPage() {
     const target = intent.id
       ? list.find((p) => p.id === intent.id)
       : list.filter((p) => p.title === intent.title)
-        .sort((a, b) => new Date(b.dateCreated) - new Date(a.dateCreated))[0];
+        .sort((a, b) => parseDate(b.dateCreated) - parseDate(a.dateCreated))[0];
     if (!target) return; // wait until the saved post appears in the refetch
     pending.current = null;
     (async () => {
@@ -422,8 +440,16 @@ function FeedPage() {
     })();
   }, [posts, fetching]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const valid = draft.title.trim() && draft.body.trim() && draft.body.length <= MAX_LEN;
+  const bodyLen = htmlToText(draft.body).length;
+  const hasBody = bodyLen > 0 || /<img[\s>]/i.test(draft.body || '');
+  const valid = draft.title.trim() && hasBody && bodyLen <= MAX_LEN;
   const resetDraft = () => setDraft(emptyDraft);
+
+  const uploadInlineImage = async (file) => {
+    const res = await uploadPostInlineImage({ file });
+    if (res && res.success && res.id) return postAttachmentUrl({ uuid: res.id }, true);
+    return null;
+  };
 
   const saveDraft = () => {
     if (!draft.title.trim()) return;
@@ -472,7 +498,7 @@ function FeedPage() {
     const q = search.trim().toLowerCase();
     return (posts || []).filter((p) => {
       if (filter !== 'ALL' && p.postType !== filter) return false;
-      if (q && !(`${p.title} ${p.body || ''}`.toLowerCase().includes(q))) return false;
+      if (q && !(`${p.title} ${htmlToText(p.body)}`.toLowerCase().includes(q))) return false;
       return true;
     });
   }, [posts, filter, search]);
@@ -540,15 +566,18 @@ function FeedPage() {
             </div>
 
             <div className={classes.fieldGroup}>
-              <label className={classes.fieldLabel} htmlFor="cf-body">{fm('communications.post.body')}</label>
-              <textarea
-                id="cf-body" className={`${classes.filled} ${classes.textarea}`} value={draft.body} maxLength={MAX_LEN}
-                onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+              <span className={classes.fieldLabel}>{fm('communications.post.body')}</span>
+              <RichTextEditor
+                value={draft.body}
+                onChange={(html) => setDraft((d) => ({ ...d, body: html }))}
+                onImageUpload={uploadInlineImage}
                 placeholder={fm('communications.composer.messagePlaceholder')}
+                ariaLabel={fm('communications.post.body')}
+                fm={fm}
               />
               <div style={{ textAlign: 'right', marginTop: 6 }}>
-                <span className={`${classes.counter} ${draft.body.length > MAX_LEN ? classes.counterOver : ''}`}>
-                  {draft.body.length}
+                <span className={`${classes.counter} ${bodyLen > MAX_LEN ? classes.counterOver : ''}`}>
+                  {bodyLen}
                   {' / '}
                   {MAX_LEN}
                 </span>

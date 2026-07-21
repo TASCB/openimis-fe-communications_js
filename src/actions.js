@@ -1,5 +1,5 @@
 import {
-  graphql, formatMutation, formatPageQueryWithCount, graphqlWithVariables, formatGQLString, baseApiUrl,
+  graphql, formatMutation, formatPageQueryWithCount, graphqlWithVariables, baseApiUrl,
   decodeId,
 } from '@openimis/fe-core';
 import { CLEAR, ERROR, REQUEST, SUCCESS } from './utils/action-type';
@@ -32,7 +32,9 @@ const POST_PROJECTION = () => [
   `attachments { ${POST_ATTACHMENT_PROJECTION().join(' ')} }`,
 ];
 
-const str = (k, v) => (v !== undefined && v !== null && v !== '' ? `${k}: "${formatGQLString(v)}"` : '');
+// JSON.stringify emits a correctly-escaped GraphQL string literal (quotes, backslashes,
+// newlines). fe-core's formatGQLString double-escapes quotes (\\") and breaks rich-HTML bodies.
+const str = (k, v) => (v !== undefined && v !== null && v !== '' ? `${k}: ${JSON.stringify(String(v))}` : '');
 const raw = (k, v) => (v !== undefined && v !== null && v !== '' ? `${k}: ${v}` : '');
 const list = (k, v) => (Array.isArray(v) && v.length ? `${k}: [${v.map((x) => `"${x}"`).join(',')}]` : '');
 
@@ -200,6 +202,12 @@ export function uploadPostAttachment({ postId, file, description }) {
   const f = new FormData();
   f.append('post_id', postId); f.append('file', file);
   if (description) f.append('description', description);
+  return uploadFile('/communications/post-attachments/upload/', f);
+}
+// Inline image embedded in the post body (no post_id — uploaded while composing).
+export function uploadPostInlineImage({ file }) {
+  const f = new FormData();
+  f.append('is_inline', '1'); f.append('file', file);
   return uploadFile('/communications/post-attachments/upload/', f);
 }
 export const deletePostAttachment = (a, label) => childDelete('deleteCommunicationPostAttachment', a, label);
