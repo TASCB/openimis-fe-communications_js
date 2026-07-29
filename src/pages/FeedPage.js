@@ -35,6 +35,7 @@ import {
 import RichTextEditor from '../components/RichTextEditor';
 import RichText from '../components/RichText';
 import { htmlToText } from '../components/htmlSanitize';
+import { relTime } from '../utils/dates';
 
 const TYPES = ['ANNOUNCEMENT', 'UPDATE', 'MEDIA_HIGHLIGHT', 'NEWSLETTER'];
 const TYPE_META = {
@@ -213,29 +214,6 @@ const useStyles = makeStyles((theme) => {
     attachActions: { display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 },
   };
 });
-
-// Backend runs USE_TZ=False / TIME_ZONE=UTC, so timestamps arrive as naive UTC with no
-// tz marker; append Z so the browser parses them as UTC instead of local time.
-function parseDate(iso) {
-  if (!iso) return null;
-  const s = /([zZ]|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : `${iso}Z`;
-  const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function relTime(iso) {
-  const d = parseDate(iso);
-  if (!d) return '';
-  const diff = (Date.now() - d.getTime()) / 1000;
-  if (Number.isNaN(diff)) return '';
-  if (diff < 60) return 'Just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  const hhmm = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-  if (diff < 172800) return `Yesterday · ${hhmm}`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
-  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-}
 
 function AttachmentCard({
   classes, fm, att, onDelete,

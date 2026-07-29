@@ -54,8 +54,6 @@ const STORE_STATE = {
   libraryAssets: [], libraryAssetsPageInfo: {}, libraryAssetsTotalCount: 0, fetchingLibraryAssets: false, fetchedLibraryAssets: false, errorLibraryAssets: null,
   posts: [], postsPageInfo: {}, postsTotalCount: 0, fetchingPosts: false, fetchedPosts: false, errorPosts: null,
   announcements: [], fetchingAnnouncements: false, fetchedAnnouncements: false, errorAnnouncements: null,
-  dismissingAnnouncement: false, dismissedAnnouncement: false, errorDismissal: null,
-  submittingPost: false, submittedPost: false, errorPostSubmission: null,
   summary: null, fetchingSummary: false, errorSummary: null,
   calendar: [], fetchingCalendar: false, errorCalendar: null,
   conflicts: [], fetchingConflicts: false,
@@ -215,20 +213,6 @@ function reducer(state = STORE_STATE, action) {
     case ERROR(ACTION_TYPE.SEARCH_ANNOUNCEMENTS):
       return { ...state, fetchingAnnouncements: false, errorAnnouncements: formatServerError(action.payload) };
 
-    case REQUEST(ACTION_TYPE.DISMISS_ANNOUNCEMENT):
-      return { ...state, dismissingAnnouncement: true, dismissedAnnouncement: false, errorDismissal: null };
-    case SUCCESS(ACTION_TYPE.DISMISS_ANNOUNCEMENT):
-      return { ...state, dismissingAnnouncement: false, dismissedAnnouncement: true };
-    case ERROR(ACTION_TYPE.DISMISS_ANNOUNCEMENT):
-      return { ...state, dismissingAnnouncement: false, errorDismissal: formatServerError(action.payload) };
-
-    case REQUEST(ACTION_TYPE.SUBMIT_POST_FOR_APPROVAL):
-      return { ...state, submittingPost: true, submittedPost: false, errorPostSubmission: null };
-    case SUCCESS(ACTION_TYPE.SUBMIT_POST_FOR_APPROVAL):
-      return { ...state, submittingPost: false, submittedPost: true };
-    case ERROR(ACTION_TYPE.SUBMIT_POST_FOR_APPROVAL):
-      return { ...state, submittingPost: false, errorPostSubmission: formatServerError(action.payload) };
-
     case REQUEST(ACTION_TYPE.MUTATION):
       return dispatchMutationReq(state, action);
     case ERROR(ACTION_TYPE.MUTATION):
@@ -244,6 +228,8 @@ function reducer(state = STORE_STATE, action) {
     case SUCCESS(ACTION_TYPE.MANAGE_CHILD):
       return dispatchMutationResp(state, action.meta?.serviceName ?? 'child', action);
     case SUCCESS(ACTION_TYPE.MANAGE_POST):
+    case SUCCESS(ACTION_TYPE.DISMISS_ANNOUNCEMENT):
+    case SUCCESS(ACTION_TYPE.SUBMIT_POST_FOR_APPROVAL):
       return dispatchMutationResp(state, action.meta?.serviceName ?? 'post', action);
     case SUCCESS(ACTION_TYPE.MANAGE_LIBRARY):
       return dispatchMutationResp(state, action.meta?.serviceName ?? 'library', action);

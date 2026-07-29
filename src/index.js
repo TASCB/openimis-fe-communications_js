@@ -19,6 +19,7 @@ import FeedPage from './pages/FeedPage';
 import CalendarPage from './pages/CalendarPage';
 import DashboardPage from './pages/DashboardPage';
 import LibraryPage from './pages/LibraryPage';
+import LoginAnnouncements from './components/LoginAnnouncements';
 import ActivityCategoryPicker from './pickers/ActivityCategoryPicker';
 import ChannelPicker from './pickers/ChannelPicker';
 import StakeholderTypePicker from './pickers/StakeholderTypePicker';
@@ -44,6 +45,7 @@ const DEFAULT_CONFIG = {
     { key: 'communications.ChannelPicker', ref: ChannelPicker },
     { key: 'communications.StakeholderTypePicker', ref: StakeholderTypePicker },
   ],
+  'core.Boot': [LoginAnnouncements],
   'core.Router': [
     { path: ROUTE_ACTIVITIES, component: ActivitiesPage },
     { path: `${ROUTE_ACTIVITY}/:activity_uuid?`, component: ActivityPage },

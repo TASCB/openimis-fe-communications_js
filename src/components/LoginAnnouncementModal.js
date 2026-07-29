@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, Card, Typography, Box, Chip, CircularProgress,
 } from '@material-ui/core';
@@ -6,6 +6,7 @@ import { makeStyles } from '@material-ui/styles';
 import CloseIcon from '@material-ui/icons/Close';
 import { formatMessageWithValues } from '@openimis/fe-core';
 import RichText from './RichText';
+import { relTime } from '../utils/dates';
 
 const useStyles = makeStyles((theme) => ({
   dialog: {
@@ -47,48 +48,36 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function relTime(date) {
-  if (!date) return '—';
-  const now = new Date();
-  const then = new Date(date);
-  const secs = Math.floor((now - then) / 1000);
-  if (secs < 60) return 'just now';
-  const mins = Math.floor(secs / 60);
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return then.toLocaleDateString();
-}
-
 export default function LoginAnnouncementModal({
   announcements = [],
   loading = false,
+  open = false,
   onDismiss,
+  onClose,
   intl,
 }) {
   const fm = (key, vals) => formatMessageWithValues(intl, 'communications', key, vals);
   const classes = useStyles();
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  if (!announcements || announcements.length === 0) {
-    return null;
-  }
+  useEffect(() => {
+    if (open) setCurrentIndex(0);
+  }, [open]);
 
   const current = announcements[currentIndex];
   const hasNext = currentIndex < announcements.length - 1;
 
+  if (!current) return null;
+
   const handleDismiss = () => {
-    if (onDismiss) {
-      onDismiss(current.id);
-    }
-    setCurrentIndex(hasNext ? currentIndex + 1 : 0);
+    if (onDismiss) onDismiss(current.id);
+    if (hasNext) setCurrentIndex(currentIndex + 1);
+    else if (onClose) onClose();
   };
 
   return (
     <Dialog
-      open={!!current}
+      open={open}
       onClose={handleDismiss}
       className={classes.dialog}
       maxWidth="sm"
