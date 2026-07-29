@@ -326,5 +326,19 @@
   "communications.stakeholderList.delete": "Delete stakeholder list",
   "communications.asset.name": "Name",
   "communications.asset.file": "File",
-  "communications.asset.delete": "Delete asset"
+  "communications.asset.delete": "Delete asset",
+
+  "communications.approval.status.pending": "Pending Approval",
+  "communications.approval.status.approved": "Approved",
+  "communications.approval.status.rejected": "Rejected",
+  "communications.post.pendingApproval": "Awaiting communication officer approval",
+  "communications.post.submitForApproval": "Submit for Approval",
+  "communications.post.submitting": "Submitting...",
+  "communications.post.submitted": "Post submitted for approval",
+  "communications.post.rejectionReason": "Rejection reason",
+
+  "communications.announcement.title": "New Announcement",
+  "communications.announcement.read": "Read",
+  "communications.announcement.readAndNext": "Read (Next)",
+  "communications.announcement.progress": "Announcement {current} of {total}"
 }

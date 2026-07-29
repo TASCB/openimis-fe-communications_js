@@ -24,6 +24,9 @@ export const ACTION_TYPE = {
   SEARCH_STAKEHOLDER_LISTS: 'COMMS_STAKEHOLDER_LISTS',
   SEARCH_LIBRARY_ASSETS: 'COMMS_LIBRARY_ASSETS',
   SEARCH_POSTS: 'COMMS_POSTS',
+  SEARCH_ANNOUNCEMENTS: 'COMMS_ANNOUNCEMENTS',
+  DISMISS_ANNOUNCEMENT: 'COMMS_DISMISS_ANNOUNCEMENT',
+  SUBMIT_POST_FOR_APPROVAL: 'COMMS_SUBMIT_POST_FOR_APPROVAL',
   GET_SUMMARY: 'COMMS_SUMMARY',
   GET_CALENDAR: 'COMMS_CALENDAR',
   GET_CONFLICTS: 'COMMS_CONFLICTS',
@@ -50,6 +53,9 @@ const STORE_STATE = {
   stakeholderLists: [], stakeholderListsPageInfo: {}, stakeholderListsTotalCount: 0, fetchingStakeholderLists: false, fetchedStakeholderLists: false, errorStakeholderLists: null,
   libraryAssets: [], libraryAssetsPageInfo: {}, libraryAssetsTotalCount: 0, fetchingLibraryAssets: false, fetchedLibraryAssets: false, errorLibraryAssets: null,
   posts: [], postsPageInfo: {}, postsTotalCount: 0, fetchingPosts: false, fetchedPosts: false, errorPosts: null,
+  announcements: [], fetchingAnnouncements: false, fetchedAnnouncements: false, errorAnnouncements: null,
+  dismissingAnnouncement: false, dismissedAnnouncement: false, errorDismissal: null,
+  submittingPost: false, submittedPost: false, errorPostSubmission: null,
   summary: null, fetchingSummary: false, errorSummary: null,
   calendar: [], fetchingCalendar: false, errorCalendar: null,
   conflicts: [], fetchingConflicts: false,
@@ -195,6 +201,33 @@ function reducer(state = STORE_STATE, action) {
     case ERROR(ACTION_TYPE.GET_CONFLICTS):
     case CLEAR(ACTION_TYPE.GET_CONFLICTS):
       return { ...state, fetchingConflicts: false, conflicts: [] };
+
+    case REQUEST(ACTION_TYPE.SEARCH_ANNOUNCEMENTS):
+      return { ...state, fetchingAnnouncements: true, fetchedAnnouncements: false, errorAnnouncements: null };
+    case SUCCESS(ACTION_TYPE.SEARCH_ANNOUNCEMENTS):
+      return {
+        ...state,
+        fetchingAnnouncements: false,
+        fetchedAnnouncements: true,
+        announcements: (action.payload.data?.communicationPostsUnread ?? []).map((x) => ({ ...x, id: decodeId(x.id) })),
+        errorAnnouncements: formatGraphQLError(action.payload),
+      };
+    case ERROR(ACTION_TYPE.SEARCH_ANNOUNCEMENTS):
+      return { ...state, fetchingAnnouncements: false, errorAnnouncements: formatServerError(action.payload) };
+
+    case REQUEST(ACTION_TYPE.DISMISS_ANNOUNCEMENT):
+      return { ...state, dismissingAnnouncement: true, dismissedAnnouncement: false, errorDismissal: null };
+    case SUCCESS(ACTION_TYPE.DISMISS_ANNOUNCEMENT):
+      return { ...state, dismissingAnnouncement: false, dismissedAnnouncement: true };
+    case ERROR(ACTION_TYPE.DISMISS_ANNOUNCEMENT):
+      return { ...state, dismissingAnnouncement: false, errorDismissal: formatServerError(action.payload) };
+
+    case REQUEST(ACTION_TYPE.SUBMIT_POST_FOR_APPROVAL):
+      return { ...state, submittingPost: true, submittedPost: false, errorPostSubmission: null };
+    case SUCCESS(ACTION_TYPE.SUBMIT_POST_FOR_APPROVAL):
+      return { ...state, submittingPost: false, submittedPost: true };
+    case ERROR(ACTION_TYPE.SUBMIT_POST_FOR_APPROVAL):
+      return { ...state, submittingPost: false, errorPostSubmission: formatServerError(action.payload) };
 
     case REQUEST(ACTION_TYPE.MUTATION):
       return dispatchMutationReq(state, action);

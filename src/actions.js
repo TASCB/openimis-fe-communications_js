@@ -327,3 +327,21 @@ export function fetchConflicts(variables) {
   );
 }
 export const clearConflicts = () => (dispatch) => dispatch({ type: CLEAR(ACTION_TYPE.GET_CONFLICTS) });
+
+// Announcements (login modal)
+export function fetchAnnouncements(modulesManager) {
+  const query = `query { communicationPostsUnread { id title body postType isPublished isPinned publishedAt dateCreated userCreated { username } attachments { id uuid fileName fileType fileSize } } }`;
+  return graphql(query, ACTION_TYPE.SEARCH_ANNOUNCEMENTS, { gqlField: 'communicationPostsUnread' });
+}
+
+export function dismissAnnouncement(postId, label) {
+  const m = formatMutation('dismissAnnouncement', str('postId', postId), label);
+  return graphqlMutation(m.payload, ACTION_TYPE.DISMISS_ANNOUNCEMENT,
+    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'dismissAnnouncement', requestedDateTime: new Date() });
+}
+
+export function submitPostForApproval(postId, label) {
+  const m = formatMutation('submitPostForApproval', str('postId', postId), label);
+  return graphqlMutation(m.payload, ACTION_TYPE.SUBMIT_POST_FOR_APPROVAL,
+    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'submitPostForApproval', requestedDateTime: new Date() });
+}

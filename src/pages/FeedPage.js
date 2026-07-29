@@ -30,7 +30,7 @@ import {
 import { MODULE_NAME, RIGHT_POST_MANAGE, RIGHT_POST_PUBLISH } from '../constants';
 import {
   fetchPosts, savePost, deletePost, setPostPublished,
-  uploadPostAttachment, deletePostAttachment, uploadPostInlineImage,
+  uploadPostAttachment, deletePostAttachment, uploadPostInlineImage, submitPostForApproval,
 } from '../actions';
 import RichTextEditor from '../components/RichTextEditor';
 import RichText from '../components/RichText';
@@ -276,7 +276,7 @@ function AttachmentCard({
 
 function PostCard({ ctx, post }) {
   const {
-    classes, fm, fmv, canManage, canPublish, onPin, onEdit, onArchive, onDelete, onDeleteAttachment,
+    classes, fm, fmv, canManage, canPublish, onPin, onEdit, onArchive, onDelete, onDeleteAttachment, onSubmitForApproval,
   } = ctx;
   const attachments = post.attachments || [];
   const [expanded, setExpanded] = useState(false);
@@ -297,12 +297,14 @@ function PostCard({ ctx, post }) {
             {post.isPinned && (
               <span className={classes.pinnedBadge}><FlagOutlined style={{ fontSize: 13 }} />{fm('communications.post.pinnedBadge')}</span>
             )}
-            <span
-              className={classes.badge}
-              style={published ? { color: '#1b5e20', background: '#e3f4e6' } : { color: '#475569', background: '#eef1f4' }}
-            >
-              {fm(published ? 'communications.post.published' : 'communications.post.draft')}
-            </span>
+            <Tooltip title={published ? '' : fm('communications.post.pendingApproval')}>
+              <span
+                className={classes.badge}
+                style={published ? { color: '#1b5e20', background: '#e3f4e6' } : { color: '#d8941e', background: '#fef3c7' }}
+              >
+                {fm(published ? 'communications.post.published' : 'communications.approval.status.pending')}
+              </span>
+            </Tooltip>
           </div>
           <p className={classes.metaLine}>
             <span>{post.userCreated?.username || '—'}</span>
@@ -339,6 +341,17 @@ function PostCard({ ctx, post }) {
         )}
       </div>
 
+      {post.rejectionReason && (
+        <div style={{ marginTop: 12, padding: 12, backgroundColor: '#fde2e2', border: '1px solid #fca5a5', borderRadius: 8 }}>
+          <div style={{ color: '#dc2626', fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
+            {fm('communications.post.rejectionReason')}
+          </div>
+          <div style={{ color: '#991b1b', fontSize: 14, lineHeight: 1.5 }}>
+            {post.rejectionReason}
+          </div>
+        </div>
+      )}
+
       {post.body && (
         <>
           <RichText html={post.body} className={`${classes.body} ${!expanded && long ? classes.bodyClamp : ''}`} />
@@ -370,6 +383,11 @@ function PostCard({ ctx, post }) {
       <div className={classes.cardFooter}>
         {/* No per-post audience field: "All staff" is the truthful default. View counts omitted (no field). */}
         <span className={classes.footerItem}><PeopleOutline style={{ fontSize: 16 }} />{fm('communications.audience.allStaff')}</span>
+        {!published && canManage && !canPublish && onSubmitForApproval && (
+          <button type="button" className={classes.btnGhost} onClick={() => onSubmitForApproval(post)}>
+            {fm('communications.post.submitForApproval')}
+          </button>
+        )}
       </div>
     </Paper>
   );
@@ -483,6 +501,7 @@ function FeedPage() {
   ));
   const del = (p) => dispatch(deletePost(p, fm('communications.post.delete')));
   const delAttachment = (att) => dispatch(deletePostAttachment({ id: att.uuid }, fm('communications.attachment.delete')));
+  const submitForApproval = (p) => dispatch(submitPostForApproval(p.id, fm('communications.post.submitForApproval')));
   const archive = () => {};
 
   const counts = useMemo(() => {
@@ -506,7 +525,7 @@ function FeedPage() {
   const recent = visible.filter((p) => !p.isPinned);
 
   const cardCtx = {
-    classes, fm, fmv, canManage, canPublish, onPin: togglePin, onEdit: startEdit, onArchive: archive, onDelete: del, onDeleteAttachment: delAttachment,
+    classes, fm, fmv, canManage, canPublish, onPin: togglePin, onEdit: startEdit, onArchive: archive, onDelete: del, onDeleteAttachment: delAttachment, onSubmitForApproval: submitForApproval,
   };
 
   const segments = [['ALL', fm('communications.filter.all')], ...TYPES.map((t) => [t, fm(`communications.postType.${t}`)])];
