@@ -29,6 +29,7 @@ export const ACTION_TYPE = {
   SUBMIT_POST_FOR_APPROVAL: 'COMMS_SUBMIT_POST_FOR_APPROVAL',
   GET_SUMMARY: 'COMMS_SUMMARY',
   GET_CALENDAR: 'COMMS_CALENDAR',
+  GET_UNIFIED_CALENDAR: 'COMMS_UNIFIED_CALENDAR',
   GET_CONFLICTS: 'COMMS_CONFLICTS',
   CREATE_ACTIVITY: 'COMMS_CREATE_ACTIVITY',
   UPDATE_ACTIVITY: 'COMMS_UPDATE_ACTIVITY',
@@ -190,6 +191,17 @@ function reducer(state = STORE_STATE, action) {
         calendar: (action.payload.data.activityCalendar ?? []).map((x) => ({ ...x, id: decodeId(x.id) })),
       };
     case ERROR(ACTION_TYPE.GET_CALENDAR):
+      return { ...state, fetchingCalendar: false, errorCalendar: formatServerError(action.payload) };
+
+    case REQUEST(ACTION_TYPE.GET_UNIFIED_CALENDAR):
+      return { ...state, fetchingCalendar: true, errorCalendar: null };
+    case SUCCESS(ACTION_TYPE.GET_UNIFIED_CALENDAR):
+      // Ids arrive raw (plain String on the unified type), so they must not be decoded.
+      return {
+        ...state, fetchingCalendar: false,
+        calendar: action.payload.data.coordinationUnifiedCalendar ?? [],
+      };
+    case ERROR(ACTION_TYPE.GET_UNIFIED_CALENDAR):
       return { ...state, fetchingCalendar: false, errorCalendar: formatServerError(action.payload) };
 
     case REQUEST(ACTION_TYPE.GET_CONFLICTS):

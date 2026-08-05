@@ -1,10 +1,9 @@
 {
   "communications.menu.activities": "Communication Activities",
-  "communications.menu.feed": "Communication Feed",
-  "communications.menu.calendar": "Communications Calendar",
-  "communications.menu.dashboard": "Communications Dashboard",
-  "communications.menu.library": "Communications Library",
-
+  "communications.menu.feed": "News Feed",
+  "communications.menu.calendar": "Calendar",
+  "communications.menu.dashboard": "Dashboard",
+  "communications.menu.library": "Library",
   "communications.addButton": "Add",
   "communications.saveButton.tooltip": "Save",
   "communications.createButton.tooltip": "Create",
@@ -16,7 +15,6 @@
   "communications.no": "No",
   "communications.open": "Open",
   "communications.close": "Close",
-
   "communications.activities.page.title": "Communication Activities",
   "communications.ActivityPage.title": "Activity {code}",
   "communications.feed.page.title": "Communication Feed",
@@ -48,7 +46,6 @@
   "communications.library.page.title": "Communications Library",
   "communications.headPanel.title": "Activity Details",
   "communications.searcherResultsTitle": "{activitiesTotalCount} Activities",
-
   "communications.code": "Code",
   "communications.title": "Title",
   "communications.activityType": "Activity Type",
@@ -70,7 +67,6 @@
   "communications.audienceVariance": "Audience Variance",
   "communications.mediaHousesInvited": "Media Houses Invited",
   "communications.mediaHousesReported": "Media Houses Reported",
-
   "communications.status": "Status",
   "communications.status.null": "Any",
   "communications.status.DRAFT": "Draft",
@@ -83,7 +79,6 @@
   "communications.status.CLOSED": "Closed",
   "communications.status.ARCHIVED": "Archived",
   "communications.status.CANCELLED": "Cancelled",
-
   "communications.activityType.null": "Any",
   "communications.activityType.MEDIA_MISSION": "Media Mission",
   "communications.activityType.PRESS_RELEASE": "Press Release",
@@ -94,7 +89,6 @@
   "communications.activityType.COMMUNITY_AWARENESS": "Community Awareness Session",
   "communications.activityType.STAKEHOLDER_BRIEFING": "Stakeholder Briefing",
   "communications.activityType.OTHER": "Other",
-
   "communications.channelType": "Channel Type",
   "communications.channelType.null": "Any",
   "communications.channelType.EMAIL": "Email",
@@ -106,7 +100,6 @@
   "communications.channelType.WEB": "Website / Portal",
   "communications.channelType.EVENT": "Community Event",
   "communications.channelType.OTHER": "Other",
-
   "communications.dispatchStatus": "Dispatch",
   "communications.dispatchStatus.null": "Any",
   "communications.dispatchStatus.PENDING": "Pending",
@@ -114,7 +107,6 @@
   "communications.dispatchStatus.SENT": "Sent",
   "communications.dispatchStatus.FAILED": "Failed",
   "communications.dispatchStatus.SKIPPED": "Skipped",
-
   "communications.role": "Role",
   "communications.role.null": "Any",
   "communications.role.OWNER": "Owner",
@@ -122,14 +114,12 @@
   "communications.role.REVIEWER": "Reviewer",
   "communications.role.APPROVER": "Approver",
   "communications.role.SUPPORT": "Support",
-
   "communications.assignmentStatus": "Status",
   "communications.assignmentStatus.null": "Any",
   "communications.assignmentStatus.ASSIGNED": "Assigned",
   "communications.assignmentStatus.CONFIRMED": "Confirmed",
   "communications.assignmentStatus.DECLINED": "Declined",
   "communications.assignmentStatus.REPLACED": "Replaced",
-
   "communications.level": "Level",
   "communications.level.null": "Any",
   "communications.level.NATIONAL": "National",
@@ -137,7 +127,6 @@
   "communications.level.PAA": "PAA",
   "communications.level.COMMUNITY": "Community",
   "communications.level.OTHER": "Other",
-
   "communications.assetType": "Asset Type",
   "communications.assetType.null": "Any",
   "communications.assetType.TEMPLATE": "Template",
@@ -146,14 +135,12 @@
   "communications.assetType.VIDEO": "Video",
   "communications.assetType.DOCUMENT": "Document",
   "communications.assetType.OTHER": "Other",
-
   "communications.postType": "Type",
   "communications.postType.null": "Any",
   "communications.postType.ANNOUNCEMENT": "Announcement",
   "communications.postType.UPDATE": "Update",
   "communications.postType.MEDIA_HIGHLIGHT": "Media Highlight",
   "communications.postType.NEWSLETTER": "Newsletter",
-
   "communications.action.submit": "Submit",
   "communications.action.approve": "Approve",
   "communications.action.reject": "Reject",
@@ -174,42 +161,36 @@
   "communications.action.close.mutationLabel": "Close activity {code}",
   "communications.action.archive.mutationLabel": "Archive activity {code}",
   "communications.action.cancel.mutationLabel": "Cancel activity {code}",
-
   "communications.tab.channels": "Channels",
   "communications.tab.objectives": "Objectives",
   "communications.tab.audience": "Audience",
   "communications.tab.assignments": "Staff",
   "communications.tab.attachments": "Attachments",
   "communications.tab.feedback": "Feedback",
-
   "communications.channel.channel": "Channel",
   "communications.channel.target": "Target / Handle",
   "communications.channel.dispatchStatus": "Dispatch",
   "communications.channel.dispatch": "Dispatch (blast)",
   "communications.channel.add": "Add channel",
   "communications.channel.delete": "Remove channel",
-
   "communications.objective.description": "Objective",
   "communications.objective.indicator": "Indicator",
   "communications.objective.target": "Target",
   "communications.objective.achieved": "Achieved",
   "communications.objective.add": "Add objective",
   "communications.objective.delete": "Remove objective",
-
   "communications.audience.stakeholder": "Stakeholder Type",
   "communications.audience.level": "Level",
   "communications.audience.planned": "Planned Reach",
   "communications.audience.actual": "Actual Reach",
   "communications.audience.add": "Add audience",
   "communications.audience.delete": "Remove audience",
-
   "communications.assignment.staff": "Staff Member",
   "communications.assignment.role": "Role",
   "communications.assignment.status": "Status",
   "communications.assignment.notes": "Notes",
   "communications.assignment.add": "Add staff assignment",
   "communications.assignment.delete": "Remove staff assignment",
-
   "communications.attachment.delete": "Delete attachment",
   "communications.attachment.view": "Preview",
   "communications.attachment.download": "Download",
@@ -220,13 +201,11 @@
   "communications.feedback.comment": "Comment",
   "communications.feedback.add": "Add feedback",
   "communications.feedback.delete": "Remove feedback",
-
   "communications.file.name": "File",
   "communications.file.description": "Description",
   "communications.file.uploadedBy": "Uploaded By",
   "communications.file.uploadedDate": "Uploaded Date",
   "communications.file.upload": "Upload",
-
   "communications.post.title": "Title",
   "communications.post.body": "Message",
   "communications.post.add": "Post update",
@@ -237,7 +216,6 @@
   "communications.post.draft": "Draft",
   "communications.post.publishAction": "Post",
   "communications.post.attachmentCount": "{count, plural, one {# attachment} other {# attachments}}",
-
   "communications.feed.eyebrow": "Communications",
   "communications.feed.subtitle": "Post announcements, updates, and events for TASAF staff and see what's been published.",
   "communications.feed.counts": "{published} published · {draft} draft",
@@ -281,25 +259,20 @@
   "communications.action.pin": "Pin",
   "communications.action.unpin": "Unpin",
   "communications.action.edit": "Edit",
-  "communications.action.archive": "Archive",
   "communications.action.delete": "Delete",
   "communications.post.pinnedBadge": "Pinned",
   "communications.post.saveDraft.label": "Save draft post",
   "communications.post.pin.label": "Pin post",
   "communications.post.unpin.label": "Unpin post",
-
   "communications.conflict.hardTitle": "Conflicts that block saving:",
   "communications.conflict.softTitle": "Warnings (saving allowed):",
-
   "communications.deleteDialog.title": "Delete activity",
   "communications.deleteDialog.message": "Delete activity {code}? It will be soft-deleted.",
   "communications.delete.mutationLabel": "Delete activity {code}",
   "communications.create.mutationLabel": "Create activity {code}",
   "communications.update.mutationLabel": "Update activity {code}",
-
   "communications.profile.createdBy": "Created by",
   "communications.profile.version": "Version",
-
   "communications.dashboard.total": "Total",
   "communications.dashboard.thisWeek": "This Week",
   "communications.dashboard.upcoming": "Upcoming",
@@ -314,7 +287,6 @@
   "communications.dashboard.reachByLevel": "Audience Reach by Level (Planned / Actual)",
   "communications.dashboard.byStatus": "Activities by Status",
   "communications.dashboard.byChannel": "Activities by Channel",
-
   "communications.library.templates": "Templates",
   "communications.library.stakeholderLists": "Stakeholder Lists",
   "communications.library.assets": "Assets",
@@ -327,7 +299,6 @@
   "communications.asset.name": "Name",
   "communications.asset.file": "File",
   "communications.asset.delete": "Delete asset",
-
   "communications.approval.status.pending": "Pending Approval",
   "communications.approval.status.approved": "Approved",
   "communications.approval.status.rejected": "Rejected",
@@ -336,9 +307,14 @@
   "communications.post.submitting": "Submitting...",
   "communications.post.submitted": "Post submitted for approval",
   "communications.post.rejectionReason": "Rejection reason",
-
   "communications.announcement.title": "New Announcement",
   "communications.announcement.read": "Read",
   "communications.announcement.readAndNext": "Read (Next)",
-  "communications.announcement.progress": "Announcement {current} of {total}"
+  "communications.announcement.progress": "Announcement {current} of {total}",
+  "communications.calendar.scope.module": "This module",
+  "communications.calendar.scope.all": "All activities",
+  "communications.calendar.sourceLegend": "Activity source",
+  "communications.calendar.source.TRAINING": "Training",
+  "communications.calendar.source.COORDINATION": "Coordination",
+  "communications.calendar.source.COMMUNICATIONS": "Communications"
 }
