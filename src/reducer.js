@@ -196,7 +196,6 @@ function reducer(state = STORE_STATE, action) {
     case REQUEST(ACTION_TYPE.GET_UNIFIED_CALENDAR):
       return { ...state, fetchingCalendar: true, errorCalendar: null };
     case SUCCESS(ACTION_TYPE.GET_UNIFIED_CALENDAR):
-      // Ids arrive raw (plain String on the unified type), so they must not be decoded.
       return {
         ...state, fetchingCalendar: false,
         calendar: action.payload.data.coordinationUnifiedCalendar ?? [],
