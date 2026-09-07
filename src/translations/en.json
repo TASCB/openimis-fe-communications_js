@@ -321,5 +321,7 @@
   "communications.dashboard.thisWeek.caption": "Starting within this week",
   "communications.dashboard.upcoming.caption": "Approved or scheduled ahead",
   "communications.dashboard.audience": "Audience reach",
-  "communications.dashboard.mediaCoverage": "Media coverage"
+  "communications.dashboard.mediaCoverage": "Media coverage",
+  "communications.dashboard.reachAchieved": "Reach Achieved",
+  "communications.dashboard.reachAchieved.caption": "Actual against planned audience"
 }

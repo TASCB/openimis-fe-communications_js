@@ -55,15 +55,20 @@ function DashboardPage() {
   const history = useHistory();
   const goActivities = () => history.push('/communications/activities');
 
+  const planned = summary?.plannedAudienceTotal ?? 0;
+  const actual = summary?.actualAudienceTotal ?? 0;
+  const reachAchieved = planned > 0 ? `${Math.round((actual / planned) * 100)}%` : '–';
+
   const cards = [
     ['communications.dashboard.total', summary?.totalActivities],
     ['communications.dashboard.thisWeek', summary?.activitiesThisWeek],
     ['communications.dashboard.upcoming', summary?.upcomingActivities],
+    ['communications.dashboard.reachAchieved', reachAchieved],
   ];
 
   const audienceStages = [
-    { key: 'planned', icon: <PeopleIcon />, label: t('communications.dashboard.plannedAudience'), value: summary?.plannedAudienceTotal ?? 0 },
-    { key: 'actual', icon: <VisibilityIcon />, label: t('communications.dashboard.actualAudience'), value: summary?.actualAudienceTotal ?? 0 },
+    { key: 'planned', icon: <PeopleIcon />, label: t('communications.dashboard.plannedAudience'), value: planned },
+    { key: 'actual', icon: <VisibilityIcon />, label: t('communications.dashboard.actualAudience'), value: actual },
   ];
   const mediaStages = [
     { key: 'invited', icon: <MailOutlineIcon />, label: t('communications.dashboard.mediaInvited'), value: summary?.mediaHousesInvited ?? 0 },
@@ -113,7 +118,7 @@ function DashboardPage() {
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <SectionCard title={t('communications.dashboard.byStatus')} icon={<DonutLargeIcon />}>
-                  <PipelineFlow stages={statusStages} emptyText={empty} />
+                  <PipelineFlow stages={statusStages} emptyText={empty} maxPerRow={4} />
                 </SectionCard>
               </Grid>
               <Grid item xs={12} md={6}>
