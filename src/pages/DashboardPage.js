@@ -14,12 +14,10 @@ import GroupIcon from '@material-ui/icons/Group';
 import EditIcon from '@material-ui/icons/Edit';
 import SendIcon from '@material-ui/icons/Send';
 import CheckIcon from '@material-ui/icons/Check';
-import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import EventIcon from '@material-ui/icons/Event';
 import PlayCircleOutlineIcon from '@material-ui/icons/PlayCircleOutline';
 import DoneAllIcon from '@material-ui/icons/DoneAll';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
-import ArchiveIcon from '@material-ui/icons/Archive';
 import BlockIcon from '@material-ui/icons/Block';
 import PeopleIcon from '@material-ui/icons/People';
 import VisibilityIcon from '@material-ui/icons/Visibility';
@@ -31,10 +29,9 @@ import {
 
 const STATUS_FLOW = [
   ['DRAFT', <EditIcon />], ['SUBMITTED', <SendIcon />], ['APPROVED', <CheckIcon />],
-  ['REJECTED', <HighlightOffIcon />], ['SCHEDULED', <EventIcon />],
-  ['ONGOING', <PlayCircleOutlineIcon />], ['COMPLETED', <DoneAllIcon />],
-  ['CANCELLED', <BlockIcon />], ['CLOSED', <LockOutlinedIcon />],
-  ['ARCHIVED', <ArchiveIcon />],
+  ['SCHEDULED', <EventIcon />], ['ONGOING', <PlayCircleOutlineIcon />],
+  ['COMPLETED', <DoneAllIcon />], ['CLOSED', <LockOutlinedIcon />],
+  ['CANCELLED', <BlockIcon />],
 ];
 
 const useStyles = makeStyles((theme) => ({ page: theme.page }));
@@ -62,7 +59,6 @@ function DashboardPage() {
     ['communications.dashboard.total', summary?.totalActivities],
     ['communications.dashboard.thisWeek', summary?.activitiesThisWeek],
     ['communications.dashboard.upcoming', summary?.upcomingActivities],
-    ['communications.dashboard.ongoing', summary?.ongoingActivities],
   ];
 
   const audienceStages = [

@@ -320,7 +320,6 @@
   "communications.dashboard.total.caption": "All activities on record",
   "communications.dashboard.thisWeek.caption": "Starting within this week",
   "communications.dashboard.upcoming.caption": "Approved or scheduled ahead",
-  "communications.dashboard.ongoing.caption": "Running right now",
   "communications.dashboard.audience": "Audience reach",
   "communications.dashboard.mediaCoverage": "Media coverage"
 }
