@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import { Grid, Box } from '@material-ui/core';
 import {
-  Helmet, useTranslations, useModulesManager, ProgressOrError,
+  Helmet, useTranslations, useModulesManager, ProgressOrError, useHistory,
 } from '@openimis/fe-core';
 import { MODULE_NAME } from '../constants';
 import { fetchSummary } from '../actions';
@@ -20,6 +20,11 @@ import PlayCircleOutlineIcon from '@material-ui/icons/PlayCircleOutline';
 import DoneAllIcon from '@material-ui/icons/DoneAll';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import ArchiveIcon from '@material-ui/icons/Archive';
+import BlockIcon from '@material-ui/icons/Block';
+import PeopleIcon from '@material-ui/icons/People';
+import VisibilityIcon from '@material-ui/icons/Visibility';
+import MailOutlineIcon from '@material-ui/icons/MailOutline';
+import AssignmentTurnedInIcon from '@material-ui/icons/AssignmentTurnedIn';
 import {
   DashboardHeader, StatCard, SectionCard, PipelineFlow, RankedList,
 } from '@openimis/fe-tasaf_common';
@@ -28,7 +33,8 @@ const STATUS_FLOW = [
   ['DRAFT', <EditIcon />], ['SUBMITTED', <SendIcon />], ['APPROVED', <CheckIcon />],
   ['REJECTED', <HighlightOffIcon />], ['SCHEDULED', <EventIcon />],
   ['ONGOING', <PlayCircleOutlineIcon />], ['COMPLETED', <DoneAllIcon />],
-  ['CLOSED', <LockOutlinedIcon />], ['ARCHIVED', <ArchiveIcon />],
+  ['CANCELLED', <BlockIcon />], ['CLOSED', <LockOutlinedIcon />],
+  ['ARCHIVED', <ArchiveIcon />],
 ];
 
 const useStyles = makeStyles((theme) => ({ page: theme.page }));
@@ -49,27 +55,29 @@ function DashboardPage() {
   const t = (k) => formatMessage(k);
   const empty = t('communications.dashboard.empty');
 
-  const primary = [
+  const history = useHistory();
+  const goActivities = () => history.push('/communications/activities');
+
+  const cards = [
     ['communications.dashboard.total', summary?.totalActivities],
     ['communications.dashboard.thisWeek', summary?.activitiesThisWeek],
     ['communications.dashboard.upcoming', summary?.upcomingActivities],
     ['communications.dashboard.ongoing', summary?.ongoingActivities],
   ];
-  const secondary = [
-    ['communications.dashboard.completed', summary?.completedActivities],
-    ['communications.dashboard.cancelled', summary?.cancelledActivities],
-    ['communications.dashboard.plannedAudience', summary?.plannedAudienceTotal],
-    ['communications.dashboard.actualAudience', summary?.actualAudienceTotal],
-    ['communications.dashboard.mediaInvited', summary?.mediaHousesInvited],
-    ['communications.dashboard.mediaReported', summary?.mediaHousesReported],
+
+  const audienceStages = [
+    { key: 'planned', icon: <PeopleIcon />, label: t('communications.dashboard.plannedAudience'), value: summary?.plannedAudienceTotal ?? 0 },
+    { key: 'actual', icon: <VisibilityIcon />, label: t('communications.dashboard.actualAudience'), value: summary?.actualAudienceTotal ?? 0 },
+  ];
+  const mediaStages = [
+    { key: 'invited', icon: <MailOutlineIcon />, label: t('communications.dashboard.mediaInvited'), value: summary?.mediaHousesInvited ?? 0 },
+    { key: 'reported', icon: <AssignmentTurnedInIcon />, label: t('communications.dashboard.mediaReported'), value: summary?.mediaHousesReported ?? 0 },
   ];
 
   const counts = Object.fromEntries((summary?.byStatus ?? []).map((r) => [r.status, r.count]));
-  const statusStages = STATUS_FLOW
-    .filter(([code]) => counts[code] !== undefined)
-    .map(([code, icon]) => ({
-      key: code, icon, label: t(`communications.status.${code}`), value: counts[code] ?? 0,
-    }));
+  const statusStages = STATUS_FLOW.map(([code, icon]) => ({
+    key: code, icon, label: t(`communications.status.${code}`), value: counts[code] ?? 0,
+  }));
   const byType = (summary?.byType ?? []).map((r) => ({
     key: r.activityType, label: t(`communications.activityType.${r.activityType}`), value: r.count,
   }));
@@ -98,9 +106,9 @@ function DashboardPage() {
       {!error && (
         <>
           <Grid container spacing={3}>
-            {[...primary, ...secondary].map(([l, v]) => (
+            {cards.map(([l, v]) => (
               <Grid item xs={12} sm={6} md={3} key={l}>
-                <StatCard label={t(l)} value={v} />
+                <StatCard label={t(l)} value={v} caption={t(`${l}.caption`)} onClick={goActivities} />
               </Grid>
             ))}
           </Grid>
@@ -110,6 +118,16 @@ function DashboardPage() {
               <Grid item xs={12}>
                 <SectionCard title={t('communications.dashboard.byStatus')} icon={<DonutLargeIcon />}>
                   <PipelineFlow stages={statusStages} emptyText={empty} />
+                </SectionCard>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <SectionCard title={t('communications.dashboard.audience')} icon={<PeopleIcon />}>
+                  <PipelineFlow stages={audienceStages} emptyText={empty} />
+                </SectionCard>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <SectionCard title={t('communications.dashboard.mediaCoverage')} icon={<MailOutlineIcon />}>
+                  <PipelineFlow stages={mediaStages} emptyText={empty} />
                 </SectionCard>
               </Grid>
               <Grid item xs={12} md={6}>
