@@ -7,9 +7,29 @@ import {
 } from '@openimis/fe-core';
 import { MODULE_NAME } from '../constants';
 import { fetchSummary } from '../actions';
+import DonutLargeIcon from '@material-ui/icons/DonutLarge';
+import CategoryIcon from '@material-ui/icons/Category';
+import RecordVoiceOverIcon from '@material-ui/icons/RecordVoiceOver';
+import GroupIcon from '@material-ui/icons/Group';
+import EditIcon from '@material-ui/icons/Edit';
+import SendIcon from '@material-ui/icons/Send';
+import CheckIcon from '@material-ui/icons/Check';
+import HighlightOffIcon from '@material-ui/icons/HighlightOff';
+import EventIcon from '@material-ui/icons/Event';
+import PlayCircleOutlineIcon from '@material-ui/icons/PlayCircleOutline';
+import DoneAllIcon from '@material-ui/icons/DoneAll';
+import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
+import ArchiveIcon from '@material-ui/icons/Archive';
 import {
-  DashboardHeader, StatCard, SectionCard, Breakdown, RankedList,
+  DashboardHeader, StatCard, SectionCard, PipelineFlow, RankedList,
 } from '@openimis/fe-tasaf_common';
+
+const STATUS_FLOW = [
+  ['DRAFT', <EditIcon />], ['SUBMITTED', <SendIcon />], ['APPROVED', <CheckIcon />],
+  ['REJECTED', <HighlightOffIcon />], ['SCHEDULED', <EventIcon />],
+  ['ONGOING', <PlayCircleOutlineIcon />], ['COMPLETED', <DoneAllIcon />],
+  ['CLOSED', <LockOutlinedIcon />], ['ARCHIVED', <ArchiveIcon />],
+];
 
 const useStyles = makeStyles((theme) => ({ page: theme.page }));
 
@@ -44,9 +64,12 @@ function DashboardPage() {
     ['communications.dashboard.mediaReported', summary?.mediaHousesReported],
   ];
 
-  const byStatus = (summary?.byStatus ?? []).map((r) => ({
-    key: r.status, label: t(`communications.status.${r.status}`), value: r.count,
-  }));
+  const counts = Object.fromEntries((summary?.byStatus ?? []).map((r) => [r.status, r.count]));
+  const statusStages = STATUS_FLOW
+    .filter(([code]) => counts[code] !== undefined)
+    .map(([code, icon]) => ({
+      key: code, icon, label: t(`communications.status.${code}`), value: counts[code] ?? 0,
+    }));
   const byType = (summary?.byType ?? []).map((r) => ({
     key: r.activityType, label: t(`communications.activityType.${r.activityType}`), value: r.count,
   }));
@@ -75,42 +98,32 @@ function DashboardPage() {
       {!error && (
         <>
           <Grid container spacing={3}>
-            {primary.map(([l, v]) => (
-              <Grid item xs={6} md={3} key={l}>
-                <StatCard primary label={t(l)} value={v} />
+            {[...primary, ...secondary].map(([l, v]) => (
+              <Grid item xs={12} sm={6} md={3} key={l}>
+                <StatCard label={t(l)} value={v} />
               </Grid>
             ))}
           </Grid>
 
-          <Box mt={2}>
-            <Grid container spacing={2}>
-              {secondary.map(([l, v]) => (
-                <Grid item xs={6} sm={4} md={2} key={l}>
-                  <StatCard label={t(l)} value={v} />
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-
           <Box mt={3}>
             <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <SectionCard title={t('communications.dashboard.byStatus')}>
-                  <Breakdown items={byStatus} emptyText={empty} />
+              <Grid item xs={12}>
+                <SectionCard title={t('communications.dashboard.byStatus')} icon={<DonutLargeIcon />}>
+                  <PipelineFlow stages={statusStages} emptyText={empty} />
                 </SectionCard>
               </Grid>
               <Grid item xs={12} md={6}>
-                <SectionCard title={t('communications.dashboard.byType')}>
+                <SectionCard title={t('communications.dashboard.byType')} icon={<CategoryIcon />}>
                   <RankedList items={byType} emptyText={empty} />
                 </SectionCard>
               </Grid>
               <Grid item xs={12} md={6}>
-                <SectionCard title={t('communications.dashboard.byChannel')}>
+                <SectionCard title={t('communications.dashboard.byChannel')} icon={<RecordVoiceOverIcon />}>
                   <RankedList items={byChannel} emptyText={empty} />
                 </SectionCard>
               </Grid>
               <Grid item xs={12} md={6}>
-                <SectionCard title={t('communications.dashboard.reachByLevel')}>
+                <SectionCard title={t('communications.dashboard.reachByLevel')} icon={<GroupIcon />}>
                   <RankedList items={reachByLevel} emptyText={empty} />
                 </SectionCard>
               </Grid>
