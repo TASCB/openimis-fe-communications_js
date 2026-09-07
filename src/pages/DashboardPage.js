@@ -9,7 +9,7 @@ import { MODULE_NAME } from '../constants';
 import { fetchSummary } from '../actions';
 import {
   DashboardHeader, StatCard, SectionCard, Breakdown, RankedList,
-} from '../components/DashboardKit';
+} from '@openimis/fe-tasaf_common';
 
 const useStyles = makeStyles((theme) => ({ page: theme.page }));
 
