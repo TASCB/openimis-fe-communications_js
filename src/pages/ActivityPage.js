@@ -8,6 +8,7 @@ import {
 import {
   MODULE_NAME, EMPTY_STRING, ACTIVITY_STATUS, STATUS_ACTIONS,
   RIGHT_ACTIVITY_UPDATE, RIGHT_ACTIVITY_CREATE, COMMS_ROUTE_ACTIVITY,
+  COMMS_ROUTE_EVENT, COMMS_ROUTE_EVENTS, COMMS_ROUTE_ACTIVITIES, EVENT_DEFAULT_TYPE,
 } from '../constants';
 import {
   fetchActivity, clearActivity, createActivity, updateActivity, transitionActivity, decId,
@@ -15,10 +16,13 @@ import {
 import ActivityHeadPanel from '../components/ActivityHeadPanel';
 import ConflictBanner from '../components/ConflictBanner';
 import ActivityTabs from '../components/ActivityTabs';
+import ActivityTabsPlaceholder from '../components/ActivityTabsPlaceholder';
 
 const useStyles = makeStyles((theme) => ({ page: theme.page }));
 
-function ActivityPage({ activityUuid }) {
+// One form, two variants: an event IS an activity. See the guide before splitting them.
+function ActivityPage({ activityUuid, variant }) {
+  const isEvent = variant === 'event';
   const classes = useStyles();
   const dispatch = useDispatch();
   const modulesManager = useModulesManager();
@@ -30,11 +34,17 @@ function ActivityPage({ activityUuid }) {
   const submittingMutation = useSelector((s) => s.communications.submittingMutation);
   const conflicts = useSelector((s) => s.communications.conflicts);
 
-  const [edited, setEdited] = useState({ status: ACTIVITY_STATUS.DRAFT, activityType: 'OTHER' });
+  const [edited, setEdited] = useState({
+    status: ACTIVITY_STATUS.DRAFT,
+    activityType: isEvent ? EVENT_DEFAULT_TYPE : 'OTHER',
+  });
   const [resetKey, setResetKey] = useState(0);
   const prev = useRef();
 
   const isNew = !activityUuid;
+  // Planning locks at submit; outcome is recorded after the activity runs.
+  const canEditOutcome = !isNew && rights.includes(RIGHT_ACTIVITY_UPDATE)
+    && ![ACTIVITY_STATUS.ARCHIVED, ACTIVITY_STATUS.CANCELLED].includes(edited?.status);
   const canEditDetails = (isNew && rights.includes(RIGHT_ACTIVITY_CREATE))
     || (rights.includes(RIGHT_ACTIVITY_UPDATE)
         && [ACTIVITY_STATUS.DRAFT, ACTIVITY_STATUS.REJECTED].includes(edited?.status));
@@ -48,7 +58,10 @@ function ActivityPage({ activityUuid }) {
     if (activity) {
       setEdited(activity);
       setResetKey((k) => k + 1);
-      if (isNew && activity.id) history.replace(`/${modulesManager.getRef(COMMS_ROUTE_ACTIVITY)}/${activity.id}`);
+      if (isNew && activity.id) {
+        const route = modulesManager.getRef(isEvent ? COMMS_ROUTE_EVENT : COMMS_ROUTE_ACTIVITY);
+        history.replace(`/${route}/${activity.id}`);
+      }
     }
   }, [activity]);
 
@@ -61,7 +74,9 @@ function ActivityPage({ activityUuid }) {
   useEffect(() => { prev.current = submittingMutation; });
 
   const titleParams = (a) => ({ code: a?.code ?? EMPTY_STRING });
-  const back = () => history.goBack();
+  const back = () => history.push(
+    `/${modulesManager.getRef(isEvent ? COMMS_ROUTE_EVENTS : COMMS_ROUTE_ACTIVITIES)}`,
+  );
   const save = (data) => {
     const label = formatMessageWithValues(isNew ? 'communications.create.mutationLabel' : 'communications.update.mutationLabel', titleParams(data));
     if (isNew) dispatch(createActivity(data, label));
@@ -73,7 +88,7 @@ function ActivityPage({ activityUuid }) {
 
   const hasHardConflict = (conflicts ?? []).some((c) => c.hard);
   const mandatoryFilled = edited?.title && edited?.startDatetime && edited?.endDatetime;
-  const canSave = () => canEditDetails && mandatoryFilled && !hasHardConflict;
+  const canSave = () => (canEditDetails || canEditOutcome) && mandatoryFilled && !hasHardConflict;
 
   const actions = (!isNew ? (STATUS_ACTIONS[edited?.status] || []) : [])
     .filter((a) => rights.includes(a.right))
@@ -89,17 +104,20 @@ function ActivityPage({ activityUuid }) {
 
   const getPanels = () => {
     const panels = [ConflictBanner];
-    if (!isNew) panels.push(ActivityTabs);
+    // Child sections need an id, so on create they show disabled rather than hidden.
+    panels.push(isNew ? ActivityTabsPlaceholder : ActivityTabs);
     return panels;
   };
 
   return (
     <div className={classes.page}>
-      <Helmet title={formatMessageWithValues('communications.ActivityPage.title', titleParams(edited))} />
+      <Helmet title={formatMessageWithValues(
+        isEvent ? 'communications.EventPage.title' : 'communications.ActivityPage.title',
+        titleParams(edited))} />
       <Form
         key={resetKey}
         module="communications"
-        title="communications.ActivityPage.title"
+        title={isEvent ? 'communications.EventPage.title' : 'communications.ActivityPage.title'}
         titleParams={titleParams(edited)}
         edited={edited}
         edited_id={activityUuid}
@@ -115,6 +133,8 @@ function ActivityPage({ activityUuid }) {
         actions={actions}
         readOnly={!canEditDetails}
         activityId={activityUuid}
+        variant={variant}
+        outcomeReadOnly={!canEditOutcome}
         rights={rights}
       />
     </div>

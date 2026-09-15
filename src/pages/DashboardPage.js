@@ -20,6 +20,7 @@ import DoneAllIcon from '@material-ui/icons/DoneAll';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import BlockIcon from '@material-ui/icons/Block';
 import PeopleIcon from '@material-ui/icons/People';
+import StarIcon from '@material-ui/icons/Star';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import MailOutlineIcon from '@material-ui/icons/MailOutline';
 import AssignmentTurnedInIcon from '@material-ui/icons/AssignmentTurnedIn';
@@ -58,12 +59,16 @@ function DashboardPage() {
   const planned = summary?.plannedAudienceTotal ?? 0;
   const actual = summary?.actualAudienceTotal ?? 0;
   const reachAchieved = planned > 0 ? `${Math.round((actual / planned) * 100)}%` : '–';
+  // From ActivityMediaHouse rows, so '–' until activities use the registry.
+  const coverageRate = (summary?.coverageInvited ?? 0) > 0 ? `${summary.coverageRate}%` : '–';
+  const avgQuality = summary?.avgCoverageQuality != null ? `${summary.avgCoverageQuality} / 5` : '–';
 
   const cards = [
     ['communications.dashboard.total', summary?.totalActivities],
     ['communications.dashboard.thisWeek', summary?.activitiesThisWeek],
     ['communications.dashboard.upcoming', summary?.upcomingActivities],
     ['communications.dashboard.reachAchieved', reachAchieved],
+    ['communications.dashboard.coverageRate', coverageRate],
   ];
 
   const audienceStages = [
@@ -74,6 +79,18 @@ function DashboardPage() {
     { key: 'invited', icon: <MailOutlineIcon />, label: t('communications.dashboard.mediaInvited'), value: summary?.mediaHousesInvited ?? 0 },
     { key: 'reported', icon: <AssignmentTurnedInIcon />, label: t('communications.dashboard.mediaReported'), value: summary?.mediaHousesReported ?? 0 },
   ];
+
+  const coverageStages = [
+    { key: 'cinvited', icon: <MailOutlineIcon />, label: t('communications.dashboard.coverageInvited'), value: summary?.coverageInvited ?? 0 },
+    { key: 'creported', icon: <AssignmentTurnedInIcon />, label: t('communications.dashboard.coverageReported'), value: summary?.coverageReported ?? 0 },
+    { key: 'cquality', icon: <StarIcon />, label: t('communications.dashboard.avgQuality'), value: avgQuality },
+  ];
+  const coverageByMedium = (summary?.coverageByMedium ?? []).map((r) => ({
+    key: r.medium, label: t(`communications.medium.${r.medium}`), value: r.count,
+  }));
+  const coverageByScope = (summary?.coverageByScope ?? []).map((r) => ({
+    key: r.scope, label: t(`communications.scope.${r.scope}`), value: r.count,
+  }));
 
   const counts = Object.fromEntries((summary?.byStatus ?? []).map((r) => [r.status, r.count]));
   const statusStages = STATUS_FLOW.map(([code, icon]) => ({
@@ -129,6 +146,21 @@ function DashboardPage() {
               <Grid item xs={12} md={6}>
                 <SectionCard title={t('communications.dashboard.mediaCoverage')} icon={<MailOutlineIcon />}>
                   <PipelineFlow stages={mediaStages} emptyText={empty} />
+                </SectionCard>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <SectionCard title={t('communications.dashboard.coverage')} icon={<StarIcon />}>
+                  <PipelineFlow stages={coverageStages} emptyText={empty} />
+                </SectionCard>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <SectionCard title={t('communications.dashboard.coverageByMedium')} icon={<RecordVoiceOverIcon />}>
+                  <RankedList items={coverageByMedium} emptyText={empty} />
+                </SectionCard>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <SectionCard title={t('communications.dashboard.coverageByScope')} icon={<GroupIcon />}>
+                  <RankedList items={coverageByScope} emptyText={empty} />
                 </SectionCard>
               </Grid>
               <Grid item xs={12} md={6}>

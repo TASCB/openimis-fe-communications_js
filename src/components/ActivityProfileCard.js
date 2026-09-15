@@ -15,7 +15,7 @@ import Assessment from '@material-ui/icons/Assessment';
 import { useModulesManager, useTranslations, formatDateFromISO } from '@openimis/fe-core';
 import { useProfileCardStyles, ProfileTile } from '../utils/profileCardStyles';
 
-function ActivityProfileCard({ activity }) {
+function ActivityProfileCard({ activity, hideOutcome = false }) {
   const classes = useProfileCardStyles();
   const intl = useIntl();
   const modulesManager = useModulesManager();
@@ -47,10 +47,16 @@ function ActivityProfileCard({ activity }) {
           <ProfileTile md={4} icon={<Public />} label={formatMessage('communications.virtualPlatform')} value={a.virtualPlatform} />
           <ProfileTile md={4} icon={<LocationOn />} label={formatMessage('communications.location')} value={a.location?.name} />
           <ProfileTile md={4} icon={<People />} label={formatMessage('communications.plannedAudience')} value={a.plannedAudienceCount} />
-          <ProfileTile md={4} icon={<People />} label={formatMessage('communications.actualAudience')} value={a.actualAudienceCount} />
-          <ProfileTile md={4} icon={<Assessment />} label={formatMessage('communications.audienceVariance')} value={variance} />
-          <ProfileTile md={4} icon={<Assessment />} label={formatMessage('communications.mediaHousesInvited')} value={a.mediaHousesInvited} />
-          <ProfileTile md={4} icon={<Assessment />} label={formatMessage('communications.mediaHousesReported')} value={a.mediaHousesReported} />
+          {/* Outcome tiles are suppressed when the form renders a live Outcome section below,
+              so the same figure never appears twice — once static, once editable. */}
+          {!hideOutcome && (
+            <>
+              <ProfileTile md={4} icon={<People />} label={formatMessage('communications.actualAudience')} value={a.actualAudienceCount} />
+              <ProfileTile md={4} icon={<Assessment />} label={formatMessage('communications.audienceVariance')} value={variance} />
+              <ProfileTile md={4} icon={<Assessment />} label={formatMessage('communications.mediaHousesInvited')} value={a.mediaHousesInvited} />
+              <ProfileTile md={4} icon={<Assessment />} label={formatMessage('communications.mediaHousesReported')} value={a.mediaHousesReported} />
+            </>
+          )}
         </Grid>
         {a.objectiveSummary && (
           <>

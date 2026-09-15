@@ -30,7 +30,10 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
+// `extraFilters` pins a fixed server-side filter (the Events page scopes by activity type).
 function ActivitySearcher({
+  extraFilters = [],
+  detailRoute = COMMS_ROUTE_ACTIVITY,
   fetchActivities, deleteActivity, journalize, coreConfirm, clearConfirm, confirmed,
   fetchingActivities, fetchedActivities, errorActivities, activities,
   activitiesPageInfo, activitiesTotalCount, submittingMutation, mutation,
@@ -47,7 +50,7 @@ function ActivitySearcher({
   const prev = useRef();
 
   const open = (a) => a?.id && rights.includes(RIGHT_ACTIVITY_SEARCH)
-    && history.push(`/${modulesManager.getRef(COMMS_ROUTE_ACTIVITY)}/${a.id}`);
+    && history.push(`/${modulesManager.getRef(detailRoute)}/${a.id}`);
 
   useEffect(() => {
     if (toDelete) {
@@ -89,7 +92,11 @@ function ActivitySearcher({
     s.push(null);
     return s;
   };
-  const fetch = (p) => { setParams(p); return fetchActivities(modulesManager, p); };
+  const fetch = (p) => {
+    const all = [...p, ...extraFilters];
+    setParams(all);
+    return fetchActivities(modulesManager, all);
+  };
   const itemFormatters = () => {
     const f = [
       (a) => a?.code,

@@ -15,6 +15,8 @@ export const ACTION_TYPE = {
   SEARCH_CHANNELS: 'COMMS_CHANNELS',
   SEARCH_STAKEHOLDER_TYPES: 'COMMS_STAKEHOLDER_TYPES',
   SEARCH_ACTIVITY_CHANNELS: 'COMMS_ACTIVITY_CHANNELS',
+  SEARCH_ACTIVITY_MEDIA_HOUSES: 'COMMS_ACTIVITY_MEDIA_HOUSES',
+  SEARCH_PARTICIPANTS: 'COMMS_PARTICIPANTS',
   SEARCH_OBJECTIVES: 'COMMS_OBJECTIVES',
   SEARCH_AUDIENCES: 'COMMS_AUDIENCES',
   SEARCH_ASSIGNMENTS: 'COMMS_ASSIGNMENTS',
@@ -38,6 +40,12 @@ export const ACTION_TYPE = {
   MANAGE_CHILD: 'COMMS_MANAGE_CHILD',
   MANAGE_POST: 'COMMS_MANAGE_POST',
   MANAGE_LIBRARY: 'COMMS_MANAGE_LIBRARY',
+  SEARCH_MEDIA_HOUSE_CATEGORIES: 'COMMS_MEDIA_HOUSE_CATEGORIES',
+  SEARCH_MEDIA_HOUSES: 'COMMS_MEDIA_HOUSES',
+  GET_MEDIA_HOUSE: 'COMMS_MEDIA_HOUSE',
+  SEARCH_JOURNALISTS: 'COMMS_JOURNALISTS',
+  GET_JOURNALIST: 'COMMS_JOURNALIST',
+  MANAGE_REGISTRY: 'COMMS_MANAGE_REGISTRY',
 };
 
 const STORE_STATE = {
@@ -49,6 +57,7 @@ const STORE_STATE = {
   categories: [], fetchingCategories: false,
   channels: [], fetchingChannels: false,
   stakeholderTypes: [], fetchingStakeholderTypes: false,
+  activityMediaHouses: [], participants: [],
   activityChannels: [], objectives: [], audiences: [], assignments: [], attachments: [], feedback: [],
   templates: [], templatesPageInfo: {}, templatesTotalCount: 0, fetchingTemplates: false, fetchedTemplates: false, errorTemplates: null,
   stakeholderLists: [], stakeholderListsPageInfo: {}, stakeholderListsTotalCount: 0, fetchingStakeholderLists: false, fetchedStakeholderLists: false, errorStakeholderLists: null,
@@ -58,6 +67,11 @@ const STORE_STATE = {
   summary: null, fetchingSummary: false, errorSummary: null,
   calendar: [], fetchingCalendar: false, errorCalendar: null,
   conflicts: [], fetchingConflicts: false,
+  mediaHouseCategories: [], fetchingMediaHouseCategories: false,
+  mediaHouses: [], mediaHousesPageInfo: {}, mediaHousesTotalCount: 0, fetchingMediaHouses: false, fetchedMediaHouses: false, errorMediaHouses: null,
+  mediaHouse: null, fetchingMediaHouse: false, fetchedMediaHouse: false, errorMediaHouse: null,
+  journalists: [], journalistsPageInfo: {}, journalistsTotalCount: 0, fetchingJournalists: false, fetchedJournalists: false, errorJournalists: null,
+  journalist: null, fetchingJournalist: false, fetchedJournalist: false, errorJournalist: null,
 };
 
 const mapList = (payload, key) => parseData(payload.data[key])?.map((x) => ({ ...x, id: decodeId(x.id) }));
@@ -99,6 +113,32 @@ function childReducer(state, action, type, gqlField, key) {
   }
 }
 
+// single-object fetch (searcher row -> form page), mirroring the GET_ACTIVITY cases
+function objectReducer(state, action, type, gqlField, key, suffix) {
+  switch (action.type) {
+    case REQUEST(type):
+      return {
+        ...state, [`fetching${suffix}`]: true, [`fetched${suffix}`]: false, [key]: null, [`error${suffix}`]: null,
+      };
+    case SUCCESS(type):
+      return {
+        ...state,
+        [`fetching${suffix}`]: false,
+        [`fetched${suffix}`]: true,
+        [key]: mapList(action.payload, gqlField)?.[0],
+        [`error${suffix}`]: formatGraphQLError(action.payload),
+      };
+    case ERROR(type):
+      return { ...state, [`fetching${suffix}`]: false, [`error${suffix}`]: formatServerError(action.payload) };
+    case CLEAR(type):
+      return {
+        ...state, [`fetching${suffix}`]: false, [`fetched${suffix}`]: false, [key]: null, [`error${suffix}`]: null,
+      };
+    default:
+      return state;
+  }
+}
+
 function reducer(state = STORE_STATE, action) {
   switch (action.type) {
     case REQUEST(ACTION_TYPE.SEARCH_ACTIVITIES):
@@ -121,6 +161,31 @@ function reducer(state = STORE_STATE, action) {
     case SUCCESS(ACTION_TYPE.SEARCH_POSTS):
     case ERROR(ACTION_TYPE.SEARCH_POSTS):
       return listReducer(state, action, ACTION_TYPE.SEARCH_POSTS, 'posts', 'Posts');
+
+    case REQUEST(ACTION_TYPE.SEARCH_MEDIA_HOUSES):
+    case SUCCESS(ACTION_TYPE.SEARCH_MEDIA_HOUSES):
+    case ERROR(ACTION_TYPE.SEARCH_MEDIA_HOUSES):
+      return listReducer(state, action, ACTION_TYPE.SEARCH_MEDIA_HOUSES, 'mediaHouses', 'MediaHouses');
+    case REQUEST(ACTION_TYPE.SEARCH_JOURNALISTS):
+    case SUCCESS(ACTION_TYPE.SEARCH_JOURNALISTS):
+    case ERROR(ACTION_TYPE.SEARCH_JOURNALISTS):
+      return listReducer(state, action, ACTION_TYPE.SEARCH_JOURNALISTS, 'journalists', 'Journalists');
+
+    case REQUEST(ACTION_TYPE.GET_MEDIA_HOUSE):
+    case SUCCESS(ACTION_TYPE.GET_MEDIA_HOUSE):
+    case ERROR(ACTION_TYPE.GET_MEDIA_HOUSE):
+    case CLEAR(ACTION_TYPE.GET_MEDIA_HOUSE):
+      return objectReducer(state, action, ACTION_TYPE.GET_MEDIA_HOUSE, 'mediaHouse', 'mediaHouse', 'MediaHouse');
+    case REQUEST(ACTION_TYPE.GET_JOURNALIST):
+    case SUCCESS(ACTION_TYPE.GET_JOURNALIST):
+    case ERROR(ACTION_TYPE.GET_JOURNALIST):
+    case CLEAR(ACTION_TYPE.GET_JOURNALIST):
+      return objectReducer(state, action, ACTION_TYPE.GET_JOURNALIST, 'journalist', 'journalist', 'Journalist');
+
+    case REQUEST(ACTION_TYPE.SEARCH_MEDIA_HOUSE_CATEGORIES):
+    case SUCCESS(ACTION_TYPE.SEARCH_MEDIA_HOUSE_CATEGORIES):
+    case ERROR(ACTION_TYPE.SEARCH_MEDIA_HOUSE_CATEGORIES):
+      return childReducer(state, action, action.type, 'mediaHouseCategory', 'mediaHouseCategories');
 
     case REQUEST(ACTION_TYPE.GET_ACTIVITY):
       return {
@@ -151,6 +216,14 @@ function reducer(state = STORE_STATE, action) {
     case SUCCESS(ACTION_TYPE.SEARCH_STAKEHOLDER_TYPES):
     case ERROR(ACTION_TYPE.SEARCH_STAKEHOLDER_TYPES):
       return childReducer(state, action, action.type, 'stakeholderType', 'stakeholderTypes');
+    case REQUEST(ACTION_TYPE.SEARCH_PARTICIPANTS):
+    case SUCCESS(ACTION_TYPE.SEARCH_PARTICIPANTS):
+    case ERROR(ACTION_TYPE.SEARCH_PARTICIPANTS):
+      return childReducer(state, action, action.type, 'activityParticipant', 'participants');
+    case REQUEST(ACTION_TYPE.SEARCH_ACTIVITY_MEDIA_HOUSES):
+    case SUCCESS(ACTION_TYPE.SEARCH_ACTIVITY_MEDIA_HOUSES):
+    case ERROR(ACTION_TYPE.SEARCH_ACTIVITY_MEDIA_HOUSES):
+      return childReducer(state, action, action.type, 'activityMediaHouse', 'activityMediaHouses');
     case REQUEST(ACTION_TYPE.SEARCH_ACTIVITY_CHANNELS):
     case SUCCESS(ACTION_TYPE.SEARCH_ACTIVITY_CHANNELS):
     case ERROR(ACTION_TYPE.SEARCH_ACTIVITY_CHANNELS):
@@ -244,6 +317,8 @@ function reducer(state = STORE_STATE, action) {
       return dispatchMutationResp(state, action.meta?.serviceName ?? 'post', action);
     case SUCCESS(ACTION_TYPE.MANAGE_LIBRARY):
       return dispatchMutationResp(state, action.meta?.serviceName ?? 'library', action);
+    case SUCCESS(ACTION_TYPE.MANAGE_REGISTRY):
+      return dispatchMutationResp(state, action.meta?.serviceName ?? 'registry', action);
     default:
       return state;
   }

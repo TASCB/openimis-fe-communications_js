@@ -15,6 +15,21 @@ export function toISO(value, endOfDay = false) {
   }
 }
 
+// Date-only fields (graphene Date scalar) reject a datetime string, so they get their own
+// formatter rather than reusing toISO.
+export function toDate(value) {
+  if (!value) return null;
+  const pad = (n) => String(n).padStart(2, '0');
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  try {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  } catch (e) {
+    return value;
+  }
+}
+
 // Backend runs USE_TZ=False / TIME_ZONE=UTC, so timestamps arrive as naive UTC with no
 // tz marker; append Z so the browser parses them as UTC instead of local time.
 export function parseDate(iso) {

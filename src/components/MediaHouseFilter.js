@@ -6,12 +6,10 @@ import { withTheme, withStyles } from '@material-ui/core/styles';
 import _debounce from 'lodash/debounce';
 import { defaultFilterStyles } from '../utils/styles';
 import { DEFAULT_DEBOUNCE_TIME, EMPTY_STRING, CONTAINS_LOOKUP } from '../constants';
-import { ActivityStatusPicker, ActivityTypePicker } from '../pickers/ConstantPickers';
-import ActivityCategoryPicker from '../pickers/ActivityCategoryPicker';
+import { MediaMediumPicker, MediaScopePicker, ActiveStatusPicker } from '../pickers/ConstantPickers';
+import MediaHouseCategoryPicker from '../pickers/MediaHouseCategoryPicker';
 
-// Enum-typed filters (status, activityType, medium, scope, role) must emit UNQUOTED literals:
-// a choice field becomes a GraphQL enum, and `status: "DRAFT"` is a type error, not a string match.
-function ActivityFilter({ classes, filters, onChangeFilters }) {
+function MediaHouseFilter({ classes, filters, onChangeFilters }) {
   const debounced = _debounce(onChangeFilters, DEFAULT_DEBOUNCE_TIME);
   const fv = (k) => filters?.[k]?.value;
   const ft = (k) => filters?.[k]?.value ?? EMPTY_STRING;
@@ -22,19 +20,23 @@ function ActivityFilter({ classes, filters, onChangeFilters }) {
         <TextInput module="communications" label="communications.code" value={ft('code')} onChange={onText('code')} />
       </Grid>
       <Grid item xs={3} className={classes.item}>
-        <TextInput module="communications" label="communications.title" value={ft('title')} onChange={onText('title')} />
+        <TextInput module="communications" label="communications.mediaHouse.name" value={ft('name')} onChange={onText('name')} />
       </Grid>
       <Grid item xs={3} className={classes.item}>
-        <ActivityStatusPicker withNull label="communications.status" value={fv('status')}
-          onChange={(v) => onChangeFilters([{ id: 'status', value: v, filter: v ? `status: ${v}` : '' }])} />
+        <MediaMediumPicker withNull label="communications.medium" value={fv('medium')}
+          onChange={(v) => onChangeFilters([{ id: 'medium', value: v, filter: v ? `category_Medium: ${v}` : '' }])} />
       </Grid>
       <Grid item xs={3} className={classes.item}>
-        <ActivityTypePicker withNull label="communications.activityType" value={fv('activityType')}
-          onChange={(v) => onChangeFilters([{ id: 'activityType', value: v, filter: v ? `activityType: ${v}` : '' }])} />
+        <MediaScopePicker withNull label="communications.scope" value={fv('scope')}
+          onChange={(v) => onChangeFilters([{ id: 'scope', value: v, filter: v ? `category_Scope: ${v}` : '' }])} />
       </Grid>
-      <Grid item xs={3} className={classes.item}>
-        <ActivityCategoryPicker withLabel value={fv('categoryObj')}
-          onChange={(v) => onChangeFilters([{ id: 'category_Id', value: v, filter: v ? `categoryId: "${v.id}"` : '' }])} />
+      <Grid item xs={4} className={classes.item}>
+        <MediaHouseCategoryPicker withLabel value={fv('categoryObj')}
+          onChange={(v) => onChangeFilters([{ id: 'categoryObj', value: v, filter: v ? `category: "${v.id}"` : '' }])} />
+      </Grid>
+      <Grid item xs={4} className={classes.item}>
+        <ActiveStatusPicker withNull label="communications.isActive" value={fv('isActive')}
+          onChange={(v) => onChangeFilters([{ id: 'isActive', value: v, filter: v ? `isActive: ${v === 'ACTIVE'}` : '' }])} />
       </Grid>
       <Grid item xs={12} className={classes.item}>
         <PublishedComponent pubRef="location.DetailedLocationFilter" withNull anchor="parentLocation"
@@ -43,4 +45,4 @@ function ActivityFilter({ classes, filters, onChangeFilters }) {
     </Grid>
   );
 }
-export default injectIntl(withTheme(withStyles(defaultFilterStyles)(ActivityFilter)));
+export default injectIntl(withTheme(withStyles(defaultFilterStyles)(MediaHouseFilter)));

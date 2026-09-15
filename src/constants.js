@@ -27,6 +27,20 @@ export const RIGHT_AUDIENCE_MANAGE = 221402;
 export const RIGHT_POST_SEARCH = 221501;
 export const RIGHT_POST_MANAGE = 221502;
 export const RIGHT_POST_PUBLISH = 221505;
+export const RIGHT_MEDIA_HOUSE_SEARCH = 221601;
+export const RIGHT_MEDIA_HOUSE_CREATE = 221602;
+export const RIGHT_MEDIA_HOUSE_UPDATE = 221603;
+export const RIGHT_MEDIA_HOUSE_DELETE = 221604;
+export const RIGHT_MEDIA_HOUSE_CATEGORY_SEARCH = 221701;
+export const RIGHT_MEDIA_HOUSE_CATEGORY_MANAGE = 221702;
+export const RIGHT_JOURNALIST_SEARCH = 221801;
+export const RIGHT_JOURNALIST_CREATE = 221802;
+export const RIGHT_JOURNALIST_UPDATE = 221803;
+export const RIGHT_JOURNALIST_DELETE = 221804;
+export const RIGHT_PARTICIPANT_SEARCH = 221901;
+export const RIGHT_PARTICIPANT_CREATE = 221902;
+export const RIGHT_PARTICIPANT_UPDATE = 221903;
+export const RIGHT_PARTICIPANT_DELETE = 221904;
 
 export const COMMS_ROUTE_ACTIVITIES = 'communications.route.activities';
 export const COMMS_ROUTE_ACTIVITY = 'communications.route.activity';
@@ -34,6 +48,12 @@ export const COMMS_ROUTE_FEED = 'communications.route.feed';
 export const COMMS_ROUTE_CALENDAR = 'communications.route.calendar';
 export const COMMS_ROUTE_DASHBOARD = 'communications.route.dashboard';
 export const COMMS_ROUTE_LIBRARY = 'communications.route.library';
+export const COMMS_ROUTE_MEDIA_HOUSES = 'communications.route.mediaHouses';
+export const COMMS_ROUTE_MEDIA_HOUSE = 'communications.route.mediaHouse';
+export const COMMS_ROUTE_JOURNALISTS = 'communications.route.journalists';
+export const COMMS_ROUTE_JOURNALIST = 'communications.route.journalist';
+export const COMMS_ROUTE_EVENTS = 'communications.route.events';
+export const COMMS_ROUTE_EVENT = 'communications.route.event';
 
 export const DEFAULT_DEBOUNCE_TIME = 500;
 export const DEFAULT_PAGE_SIZE = 10;
@@ -56,6 +76,10 @@ export const ACTIVITY_STATUS = {
 };
 export const ACTIVITY_STATUS_LIST = Object.values(ACTIVITY_STATUS);
 
+// Status badge = one neutral grey (openIMIS convention). STATUS_COLORS stays per-status for
+// the CALENDAR, where colour is the only differentiator.
+export const STATUS_CHIP_COLOR = '#9e9e9e';
+
 export const STATUS_COLORS = {
   DRAFT: '#9e9e9e',
   SUBMITTED: '#1976d2',
@@ -72,8 +96,18 @@ export const STATUS_COLORS = {
 export const ACTIVITY_TYPE_LIST = [
   'MEDIA_MISSION', 'PRESS_RELEASE', 'PRESS_CONFERENCE',
   'IMPACT_CASE_STUDY', 'NEWSLETTER', 'ANNUAL_REPORT',
-  'COMMUNITY_AWARENESS', 'STAKEHOLDER_BRIEFING', 'OTHER',
+  'COMMUNITY_AWARENESS', 'STAKEHOLDER_BRIEFING',
+  'LAUNCH', 'COMMEMORATION', 'EXHIBITION', 'FIELD_VISIT', 'MEETING', 'WORKSHOP',
+  'OTHER',
 ];
+// The Events page is the activity searcher scoped to these formats — same entity, own view.
+export const EVENT_TYPE_LIST = [
+  'COMMUNITY_AWARENESS', 'STAKEHOLDER_BRIEFING', 'PRESS_CONFERENCE',
+  'LAUNCH', 'COMMEMORATION', 'EXHIBITION', 'FIELD_VISIT', 'MEETING', 'WORKSHOP',
+];
+export const EVENT_DEFAULT_TYPE = 'MEETING';
+export const GENDER_LIST = ['M', 'F'];
+export const ATTENDANCE_STATUS_LIST = ['INVITED', 'CONFIRMED', 'ATTENDED', 'ABSENT', 'REPLACED'];
 export const CHANNEL_TYPE_LIST = [
   'EMAIL', 'SMS', 'SOCIAL', 'RADIO', 'TV', 'PRINT', 'WEB', 'EVENT', 'OTHER',
 ];
@@ -83,6 +117,17 @@ export const ASSIGNMENT_STATUS_LIST = ['ASSIGNED', 'CONFIRMED', 'DECLINED', 'REP
 export const STAKEHOLDER_LEVEL_LIST = ['NATIONAL', 'REGIONAL', 'PAA', 'COMMUNITY', 'OTHER'];
 export const ASSET_TYPE_LIST = ['TEMPLATE', 'BRAND', 'IMAGE', 'VIDEO', 'DOCUMENT', 'OTHER'];
 export const POST_TYPE_LIST = ['ANNOUNCEMENT', 'UPDATE', 'MEDIA_HIGHLIGHT', 'NEWSLETTER'];
+export const COVERAGE_TYPE_LIST = [
+  'NEWS_ARTICLE', 'FEATURE', 'INTERVIEW', 'BULLETIN', 'TALK_SHOW', 'SOCIAL_POST', 'OTHER',
+];
+// must match RATING_MIN/RATING_MAX in the backend models
+export const RATING_MIN = 1;
+export const RATING_MAX = 5;
+export const ACTIVE_STATUS_LIST = ['ACTIVE', 'INACTIVE'];
+export const MEDIA_MEDIUM_LIST = ['NEWSPAPER', 'RADIO', 'TV', 'ONLINE', 'SOCIAL', 'OTHER'];
+export const JOURNALIST_ROLE_LIST = [
+  'REPORTER', 'EDITOR', 'PRESENTER', 'PRODUCER', 'CAMERA', 'PHOTOGRAPHER', 'CORRESPONDENT', 'OTHER',
+];
 
 // status -> available workflow actions (action + required right)
 export const STATUS_ACTIONS = {

@@ -4,12 +4,13 @@ import {
 } from '@openimis/fe-core';
 import { CLEAR, ERROR, REQUEST, SUCCESS } from './utils/action-type';
 import { ACTION_TYPE } from './reducer';
-import { toISO } from './utils/dates';
+import { toISO, toDate } from './utils/dates';
 
 const ACTIVITY_LIST_PROJECTION = () => [
   'id', 'code', 'title', 'status', 'activityType', 'startDatetime', 'endDatetime',
   'venue', 'virtualPlatform', 'plannedAudienceCount', 'actualAudienceCount',
   'mediaHousesInvited', 'mediaHousesReported', 'objectiveSummary', 'targetAudience', 'description',
+  'participantCount', 'coverageCount', 'audienceCount',
   'category { id code name }', 'location { id code name }',
   'dateCreated', 'dateUpdated', 'userCreated { username }', 'userUpdated { username }', 'version',
 ];
@@ -25,6 +26,34 @@ const FEEDBACK_PROJECTION = () => ['id', 'source', 'respondent', 'rating', 'comm
 const TEMPLATE_PROJECTION = () => ['id', 'code', 'name', 'channelType', 'subject', 'body', 'isActive'];
 const STAKEHOLDER_LIST_PROJECTION = () => ['id', 'code', 'name', 'description', 'isActive'];
 const LIBRARY_PROJECTION = () => ['id', 'code', 'name', 'assetType', 'fileName', 'fileType', 'fileUrl', 'description', 'isActive'];
+const PARTICIPANT_PROJECTION = () => [
+  'id', 'fullName', 'gender', 'organization', 'title', 'phone', 'email',
+  'attendanceStatus', 'notes',
+  'stakeholderType { id code name level }', 'location { id code name }',
+  'individual { id firstName lastName }', 'activity { id }',
+];
+const ACTIVITY_MEDIA_HOUSE_PROJECTION = () => [
+  'id', 'invited', 'attended', 'reported', 'coverageDate', 'coverageType', 'coverageUrl',
+  'coverageReference', 'coverageQuality', 'notes',
+  'mediaHouse { id code name category { id name medium scope } }', 'activity { id }',
+  'journalist { id code firstName lastName isFreelance }',
+];
+const MEDIA_HOUSE_CATEGORY_PROJECTION = () => ['id', 'code', 'name', 'medium', 'scope', 'description', 'isActive'];
+const MEDIA_HOUSE_PROJECTION = () => [
+  'id', 'code', 'name', 'avgCoverageQuality', 'coverageCount', 'frequencyOrChannel', 'language', 'contactPerson', 'phone', 'email',
+  'website', 'address', 'notes', 'isActive',
+  'category { id code name medium scope }', 'location { id code name }',
+  'primaryContact { id code firstName lastName role }',
+  'dateCreated', 'dateUpdated', 'userCreated { username }', 'userUpdated { username }', 'version',
+];
+const JOURNALIST_PROJECTION = () => [
+  'id', 'code', 'firstName', 'lastName', 'fullName', 'isFreelance', 'role', 'beat',
+  'phone', 'altPhone', 'email', 'languages', 'accreditationNo', 'accreditationExpiry',
+  'notes', 'isActive',
+  'mediaHouse { id code name category { id code name medium scope } }', 'location { id code name }',
+  'storiesFiled', 'coverageAttributed', 'avgCoverageQuality', 'lastCoverageDate',
+  'dateCreated', 'dateUpdated', 'userCreated { username }', 'userUpdated { username }', 'version',
+];
 const POST_ATTACHMENT_PROJECTION = () => ['id', 'uuid', 'fileName', 'fileType', 'fileSize', 'description', 'dateCreated', 'userCreated { username }'];
 const POST_PROJECTION = () => [
   'id', 'title', 'body', 'postType', 'isPublished', 'isPinned', 'publishedAt',
@@ -143,6 +172,42 @@ const childDelete = (deleteName, item, label) => {
   return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_CHILD,
     { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: deleteName, requestedDateTime: new Date() });
 };
+
+export const fetchParticipants = (id) => childFetch('activityParticipant', PARTICIPANT_PROJECTION, ACTION_TYPE.SEARCH_PARTICIPANTS, id);
+export const saveParticipant = (o, label) => childSave('createActivityParticipant', 'updateActivityParticipant', (p) => [
+  str('id', p?.id),
+  str('activityId', decId(p?.activityId)),
+  str('fullName', p?.fullName),
+  raw('gender', p?.gender),
+  str('stakeholderTypeId', decId(p?.stakeholderTypeId)),
+  str('organization', p?.organization),
+  str('title', p?.title),
+  str('phone', p?.phone),
+  str('email', p?.email),
+  raw('locationId', decId(p?.locationId)),
+  raw('attendanceStatus', p?.attendanceStatus),
+  str('individualId', decId(p?.individualId)),
+  str('notes', p?.notes),
+].filter(Boolean).join('\n'), o, label);
+export const deleteParticipant = (item, label) => childDelete('deleteActivityParticipant', item, label);
+
+export const fetchActivityMediaHouses = (id) => childFetch('activityMediaHouse', ACTIVITY_MEDIA_HOUSE_PROJECTION, ACTION_TYPE.SEARCH_ACTIVITY_MEDIA_HOUSES, id);
+export const saveActivityMediaHouse = (c, label) => childSave('createActivityMediaHouse', 'updateActivityMediaHouse', (o) => [
+  str('id', o?.id),
+  str('activityId', decId(o?.activityId)),
+  str('mediaHouseId', decId(o?.mediaHouseId)),
+  str('journalistId', decId(o?.journalistId)),
+  raw('invited', o?.invited ?? true),
+  raw('attended', o?.attended ?? false),
+  raw('reported', o?.reported ?? false),
+  str('coverageDate', toDate(o?.coverageDate)),
+  raw('coverageType', o?.coverageType),
+  str('coverageUrl', o?.coverageUrl),
+  str('coverageReference', o?.coverageReference),
+  raw('coverageQuality', o?.coverageQuality),
+  str('notes', o?.notes),
+].filter(Boolean).join('\n'), c, label);
+export const deleteActivityMediaHouse = (item, label) => childDelete('deleteActivityMediaHouse', item, label);
 
 export const fetchActivityChannels = (id) => childFetch('activityChannel', ACTIVITY_CHANNEL_PROJECTION, ACTION_TYPE.SEARCH_ACTIVITY_CHANNELS, id);
 export const fetchObjectives = (id) => childFetch('activityObjective', OBJECTIVE_PROJECTION, ACTION_TYPE.SEARCH_OBJECTIVES, id);
@@ -301,6 +366,11 @@ export function fetchSummary(variables = {}) {
       activitySummary(dateFrom: $dateFrom, dateTo: $dateTo, locationId: $locationId) {
         totalActivities activitiesThisWeek upcomingActivities ongoingActivities completedActivities cancelledActivities
         plannedAudienceTotal actualAudienceTotal mediaHousesInvited mediaHousesReported
+        participantsTotal participantsAttended attendanceRate
+        participantsByGender { gender count }
+        participantsByStakeholder { stakeholderTypeId stakeholderName planned attended }
+        coverageInvited coverageReported coverageRate avgCoverageQuality
+        coverageByMedium { medium count } coverageByScope { scope count }
         byStatus { status count } byType { activityType count }
         byCategory { categoryId categoryName count } byChannel { channelType count }
         reachByLevel { level planned actual }
@@ -356,4 +426,107 @@ export function submitPostForApproval(postId, label) {
   const m = formatMutation('submitPostForApproval', str('postId', postId), label);
   return graphqlMutation(m.payload, ACTION_TYPE.SUBMIT_POST_FOR_APPROVAL,
     { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'submitPostForApproval', requestedDateTime: new Date() });
+}
+
+// ---- media-house / journalist registries -----------------------------------
+export function fetchMediaHouseCategories(modulesManager, params = ['first: 200', 'isActive: true']) {
+  return graphql(formatPageQueryWithCount('mediaHouseCategory', params, MEDIA_HOUSE_CATEGORY_PROJECTION()),
+    ACTION_TYPE.SEARCH_MEDIA_HOUSE_CATEGORIES, { gqlField: 'mediaHouseCategory' });
+}
+export function saveMediaHouseCategory(c, label) {
+  const serviceName = c.id ? 'updateMediaHouseCategory' : 'createMediaHouseCategory';
+  const gql = [
+    str('id', c?.id), str('code', c?.code), str('name', c?.name),
+    raw('medium', c?.medium), raw('scope', c?.scope),
+    str('description', c?.description), raw('isActive', c?.isActive),
+  ].filter(Boolean).join('\n');
+  const m = formatMutation(serviceName, gql, label);
+  return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_REGISTRY,
+    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName, requestedDateTime: new Date() });
+}
+export function deleteMediaHouseCategory(c, label) {
+  const m = formatMutation('deleteMediaHouseCategory', list('ids', [c.id]), label);
+  return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_REGISTRY,
+    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'deleteMediaHouseCategory', requestedDateTime: new Date() });
+}
+
+export function fetchMediaHouses(modulesManager, params) {
+  return graphql(formatPageQueryWithCount('mediaHouse', params, MEDIA_HOUSE_PROJECTION()),
+    ACTION_TYPE.SEARCH_MEDIA_HOUSES, { gqlField: 'mediaHouse' });
+}
+export function fetchMediaHouse(modulesManager, params) {
+  return graphql(formatPageQueryWithCount('mediaHouse', params, MEDIA_HOUSE_PROJECTION()), ACTION_TYPE.GET_MEDIA_HOUSE);
+}
+export const clearMediaHouse = () => (dispatch) => dispatch({ type: CLEAR(ACTION_TYPE.GET_MEDIA_HOUSE) });
+
+// `code` is server-generated on create, so it is sent only on update.
+function formatMediaHouseGQL(h, includeCode = true) {
+  return [
+    str('id', h?.id),
+    includeCode ? str('code', h?.code) : null,
+    str('name', h?.name),
+    str('categoryId', decId(h?.categoryId ?? h?.category?.id)),
+    raw('locationId', decId(h?.locationId ?? h?.location?.id)),
+    str('frequencyOrChannel', h?.frequencyOrChannel), str('language', h?.language),
+    str('contactPerson', h?.contactPerson), str('phone', h?.phone), str('email', h?.email),
+    str('primaryContactId', decId(h?.primaryContactId ?? h?.primaryContact?.id)),
+    str('website', h?.website), str('address', h?.address), str('notes', h?.notes),
+    raw('isActive', h?.isActive ?? true),
+  ].filter(Boolean).join('\n');
+}
+export function createMediaHouse(h, label) {
+  const m = formatMutation('createMediaHouse', formatMediaHouseGQL(h, false), label);
+  return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_REGISTRY,
+    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'createMediaHouse', requestedDateTime: new Date() });
+}
+export function updateMediaHouse(h, label) {
+  const m = formatMutation('updateMediaHouse', formatMediaHouseGQL(h), label);
+  return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_REGISTRY,
+    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'updateMediaHouse', requestedDateTime: new Date() });
+}
+export function deleteMediaHouse(h, label) {
+  const m = formatMutation('deleteMediaHouse', list('ids', [h.id]), label);
+  return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_REGISTRY,
+    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'deleteMediaHouse', requestedDateTime: new Date() });
+}
+
+export function fetchJournalists(modulesManager, params) {
+  return graphql(formatPageQueryWithCount('journalist', params, JOURNALIST_PROJECTION()),
+    ACTION_TYPE.SEARCH_JOURNALISTS, { gqlField: 'journalist' });
+}
+export function fetchJournalist(modulesManager, params) {
+  return graphql(formatPageQueryWithCount('journalist', params, JOURNALIST_PROJECTION()), ACTION_TYPE.GET_JOURNALIST);
+}
+export const clearJournalist = () => (dispatch) => dispatch({ type: CLEAR(ACTION_TYPE.GET_JOURNALIST) });
+
+// `code` is server-generated on create, so it is sent only on update.
+function formatJournalistGQL(j, includeCode = true) {
+  return [
+    str('id', j?.id),
+    includeCode ? str('code', j?.code) : null,
+    str('firstName', j?.firstName), str('lastName', j?.lastName),
+    str('mediaHouseId', decId(j?.mediaHouseId ?? j?.mediaHouse?.id)),
+    raw('isFreelance', j?.isFreelance ?? false),
+    raw('role', j?.role), str('beat', j?.beat),
+    str('phone', j?.phone), str('altPhone', j?.altPhone), str('email', j?.email),
+    raw('locationId', decId(j?.locationId ?? j?.location?.id)),
+    str('languages', j?.languages), str('accreditationNo', j?.accreditationNo),
+    str('accreditationExpiry', toDate(j?.accreditationExpiry)),
+    str('notes', j?.notes), raw('isActive', j?.isActive ?? true),
+  ].filter(Boolean).join('\n');
+}
+export function createJournalist(j, label) {
+  const m = formatMutation('createJournalist', formatJournalistGQL(j, false), label);
+  return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_REGISTRY,
+    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'createJournalist', requestedDateTime: new Date() });
+}
+export function updateJournalist(j, label) {
+  const m = formatMutation('updateJournalist', formatJournalistGQL(j, true), label);
+  return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_REGISTRY,
+    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'updateJournalist', requestedDateTime: new Date() });
+}
+export function deleteJournalist(j, label) {
+  const m = formatMutation('deleteJournalist', list('ids', [j.id]), label);
+  return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_REGISTRY,
+    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'deleteJournalist', requestedDateTime: new Date() });
 }

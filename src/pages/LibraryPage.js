@@ -11,13 +11,15 @@ import {
 } from '@openimis/fe-core';
 import {
   MODULE_NAME, RIGHT_TEMPLATE_MANAGE, RIGHT_STAKEHOLDER_MANAGE, RIGHT_LIBRARY_UPLOAD,
+  RIGHT_MEDIA_HOUSE_CATEGORY_MANAGE,
 } from '../constants';
 import {
   fetchTemplates, saveTemplate, deleteTemplate,
   fetchStakeholderLists, saveStakeholderList, deleteStakeholderList,
   fetchLibraryAssets, deleteLibraryAsset, uploadLibraryAsset,
+  fetchMediaHouseCategories, saveMediaHouseCategory, deleteMediaHouseCategory,
 } from '../actions';
-import { ChannelTypePicker } from '../pickers/ConstantPickers';
+import { ChannelTypePicker, MediaMediumPicker, MediaScopePicker } from '../pickers/ConstantPickers';
 
 const useStyles = makeStyles((theme) => ({
   page: theme.page,
@@ -173,6 +175,61 @@ function AssetsTab() {
   );
 }
 
+// Config-grade reference data, so it lives in the Library rather than its own menu entry.
+function MediaCategoriesTab() {
+  const dispatch = useDispatch();
+  const modulesManager = useModulesManager();
+  const { formatMessage } = useTranslations(MODULE_NAME, modulesManager);
+  const rights = useSelector((s) => s.core.user.i_user.rights ?? []);
+  const items = useSelector((s) => s.communications.mediaHouseCategories);
+  const submitting = useSelector((s) => s.communications.submittingMutation);
+  const mutation = useSelector((s) => s.communications.mutation);
+  const [row, setRow] = useState({ code: '', name: '', medium: 'RADIO', scope: 'NATIONAL' });
+  const prev = useRef();
+  const refetch = () => dispatch(fetchMediaHouseCategories(modulesManager, ['first: 100']));
+  useEffect(() => { refetch(); }, []);
+  useEffect(() => { if (prev.current && !submitting) { dispatch(journalize(mutation)); refetch(); } }, [submitting]);
+  useEffect(() => { prev.current = submitting; });
+  const canManage = rights.includes(RIGHT_MEDIA_HOUSE_CATEGORY_MANAGE);
+  const add = () => {
+    if (row.code && row.name) {
+      dispatch(saveMediaHouseCategory({ ...row, isActive: true }, formatMessage('communications.mediaCategory.add')));
+      setRow({ code: '', name: '', medium: 'RADIO', scope: 'NATIONAL' });
+    }
+  };
+  return (
+    <Table size="small">
+      <TableHead><TableRow>
+        <TableCell>{formatMessage('communications.code')}</TableCell>
+        <TableCell>{formatMessage('communications.mediaCategory.name')}</TableCell>
+        <TableCell>{formatMessage('communications.medium')}</TableCell>
+        <TableCell>{formatMessage('communications.scope')}</TableCell>
+        <TableCell />
+      </TableRow></TableHead>
+      <TableBody>
+        {(items ?? []).map((c) => (
+          <TableRow key={c.id}>
+            <TableCell>{c.code}</TableCell>
+            <TableCell>{c.name}</TableCell>
+            <TableCell>{c.medium ? formatMessage(`communications.medium.${c.medium}`) : ''}</TableCell>
+            <TableCell>{c.scope ? formatMessage(`communications.scope.${c.scope}`) : ''}</TableCell>
+            <TableCell>{canManage && <Tooltip title={formatMessage('deleteButton.tooltip')}><IconButton size="small" onClick={() => dispatch(deleteMediaHouseCategory(c, formatMessage('communications.mediaCategory.delete')))}><DeleteIcon /></IconButton></Tooltip>}</TableCell>
+          </TableRow>
+        ))}
+        {canManage && (
+          <TableRow>
+            <TableCell><TextField value={row.code} placeholder="code" onChange={(e) => setRow({ ...row, code: e.target.value })} /></TableCell>
+            <TableCell><TextField value={row.name} placeholder="name" onChange={(e) => setRow({ ...row, name: e.target.value })} /></TableCell>
+            <TableCell><MediaMediumPicker value={row.medium} onChange={(v) => setRow({ ...row, medium: v })} /></TableCell>
+            <TableCell><MediaScopePicker value={row.scope} onChange={(v) => setRow({ ...row, scope: v })} /></TableCell>
+            <TableCell><Button variant="contained" size="small" color="primary" onClick={add} disabled={!row.code || !row.name}>{formatMessage('addButton')}</Button></TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
+  );
+}
+
 function LibraryPage() {
   const classes = useStyles();
   const modulesManager = useModulesManager();
@@ -182,6 +239,7 @@ function LibraryPage() {
     { key: 'templates', label: 'communications.library.templates', render: () => <TemplatesTab classes={classes} /> },
     { key: 'stakeholders', label: 'communications.library.stakeholderLists', render: () => <StakeholderListsTab /> },
     { key: 'assets', label: 'communications.library.assets', render: () => <AssetsTab /> },
+    { key: 'mediaCategories', label: 'communications.library.mediaCategories', render: () => <MediaCategoriesTab /> },
   ];
   return (
     <div className={classes.page}>
