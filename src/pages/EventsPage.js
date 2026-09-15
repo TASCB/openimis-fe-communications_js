@@ -8,7 +8,7 @@ import {
 } from '@openimis/fe-core';
 import {
   MODULE_NAME, RIGHT_ACTIVITY_SEARCH, RIGHT_ACTIVITY_CREATE, COMMS_ROUTE_EVENT,
-  EVENT_TYPE_LIST,
+  ACTIVITY_TYPE_EVENT,
 } from '../constants';
 import ActivitySearcher from '../components/ActivitySearcher';
 
@@ -17,8 +17,8 @@ const useStyles = makeStyles((theme) => ({ page: theme.page, fab: theme.fab }));
 // Events are CommunicationActivities of a gathering-shaped type — the same entity behind a
 // purpose-built view, so they stay on the unified calendar and in the activity dashboards
 // rather than becoming a parallel record nothing else knows about.
-// Choice fields are GraphQL ENUMS: values must be unquoted literals, not strings.
-const EVENT_FILTER = [`activityType_In: [${EVENT_TYPE_LIST.join(',')}]`];
+// Choice fields are GraphQL ENUMS: unquoted literal, not a string.
+const EVENT_FILTER = [`activityType: ${ACTIVITY_TYPE_EVENT}`];
 
 function EventsPage() {
   const modulesManager = useModulesManager();

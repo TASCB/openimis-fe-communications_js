@@ -33,6 +33,7 @@ import {
   uploadPostAttachment, deletePostAttachment, uploadPostInlineImage, submitPostForApproval,
 } from '../actions';
 import RichTextEditor from '../components/RichTextEditor';
+import TemplatePicker from '../components/TemplatePicker';
 import RichText from '../components/RichText';
 import { htmlToText } from '../components/htmlSanitize';
 import { relTime } from '../utils/dates';
@@ -440,6 +441,16 @@ function FeedPage() {
   const hasBody = bodyLen > 0 || /<img[\s>]/i.test(draft.body || '');
   const valid = draft.title.trim() && hasBody && bodyLen <= MAX_LEN;
   const resetDraft = () => setDraft(emptyDraft);
+  // A template seeds an empty composer. Anything already typed wins — silently replacing a
+  // half-written post would be the worst possible moment to be helpful.
+  const applyTemplate = (t) => {
+    if (!t) return;
+    setDraft((d) => ({
+      ...d,
+      title: d.title.trim() ? d.title : (t.subject || t.name || ''),
+      body: htmlToText(d.body || '').length ? d.body : (t.body || ''),
+    }));
+  };
 
   const uploadInlineImage = async (file) => {
     const res = await uploadPostInlineImage({ file });
@@ -531,6 +542,11 @@ function FeedPage() {
             </div>
           </div>
           <div className={classes.composerBody}>
+            <div className={classes.fieldGroup}>
+              <span className={classes.fieldLabel}>{fm('communications.composer.fromTemplate')}</span>
+              <TemplatePicker value={null} onChange={applyTemplate} />
+            </div>
+
             <div className={classes.fieldGroup}>
               <label className={classes.fieldLabel} htmlFor="cf-title">{fm('communications.post.title')}</label>
               <input

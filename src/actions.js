@@ -9,7 +9,7 @@ import { toISO, toDate } from './utils/dates';
 const ACTIVITY_LIST_PROJECTION = () => [
   'id', 'code', 'title', 'status', 'activityType', 'startDatetime', 'endDatetime',
   'venue', 'virtualPlatform', 'plannedAudienceCount', 'actualAudienceCount',
-  'mediaHousesInvited', 'mediaHousesReported', 'objectiveSummary', 'targetAudience', 'description',
+  'eventType', 'mediaHousesInvited', 'mediaHousesReported', 'objectiveSummary', 'targetAudience', 'description',
   'participantCount', 'coverageCount', 'audienceCount',
   'category { id code name }', 'location { id code name }',
   'dateCreated', 'dateUpdated', 'userCreated { username }', 'userUpdated { username }', 'version',
@@ -108,6 +108,7 @@ function formatActivityGQL(a, includeCode = true) {
     str('objectiveSummary', a?.objectiveSummary),
     str('categoryId', decId(a?.categoryId ?? a?.category?.id)),
     raw('activityType', a?.activityType),
+    raw('eventType', a?.eventType),
     str('startDatetime', toISO(a?.startDatetime)),
     str('endDatetime', toISO(a?.endDatetime, true)),
     str('venue', a?.venue),

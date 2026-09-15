@@ -30,8 +30,8 @@ function makePicker(pickerLabel, constants) {
 
 export const ActivityStatusPicker = makePicker('communications.status', ACTIVITY_STATUS_LIST);
 export const ActivityTypePicker = makePicker('communications.activityType', ACTIVITY_TYPE_LIST);
-// Same label so `communications.activityType.<VALUE>` keys resolve; only the set narrows.
-export const EventTypePicker = makePicker('communications.activityType', EVENT_TYPE_LIST);
+// The event sub-type (Public / Internal / CSR), shown only when activity_type is EVENT.
+export const EventTypePicker = makePicker('communications.eventType', EVENT_TYPE_LIST);
 export const ChannelTypePicker = makePicker('communications.channelType', CHANNEL_TYPE_LIST);
 export const DispatchStatusPicker = makePicker('communications.dispatchStatus', DISPATCH_STATUS_LIST);
 export const AssignmentRolePicker = makePicker('communications.role', ASSIGNMENT_ROLE_LIST);

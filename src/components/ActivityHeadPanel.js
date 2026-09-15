@@ -7,6 +7,7 @@ import {
   FormattedMessage, FormPanel, PublishedComponent, TextInput, NumberInput, withModulesManager,
 } from '@openimis/fe-core';
 import { ActivityTypePicker, EventTypePicker } from '../pickers/ConstantPickers';
+import { ACTIVITY_TYPE_EVENT } from '../constants';
 import ActivityCategoryPicker from '../pickers/ActivityCategoryPicker';
 import ActivityProfileCard from './ActivityProfileCard';
 
@@ -19,7 +20,7 @@ class ActivityHeadPanel extends FormPanel {
     } = this.props;
     const a = { ...edited };
     const isEvent = variant === 'event';
-    const TypePicker = isEvent ? EventTypePicker : ActivityTypePicker;
+    const showEventType = a?.activityType === ACTIVITY_TYPE_EVENT;
     const hasRegister = (a?.participantCount ?? 0) > 0;
     const hasCoverage = (a?.coverageCount ?? 0) > 0;
     const hasAudience = (a?.audienceCount ?? 0) > 0;
@@ -49,9 +50,19 @@ class ActivityHeadPanel extends FormPanel {
               value={a?.title} onChange={(v) => this.updateAttribute('title', v)} />
           </Grid>
           <Grid item xs={a?.code ? 4 : 6} className={classes.item}>
-            <TypePicker readOnly={readOnly} withLabel value={a?.activityType}
-              onChange={(v) => this.updateAttribute('activityType', v)} />
+            <ActivityTypePicker readOnly={readOnly} withLabel value={a?.activityType}
+              onChange={(v) => this.updateAttributes({
+                activityType: v,
+                // the sub-type only means anything for an EVENT
+                eventType: v === ACTIVITY_TYPE_EVENT ? a?.eventType : null,
+              })} />
           </Grid>
+          {showEventType && (
+            <Grid item xs={4} className={classes.item}>
+              <EventTypePicker withLabel readOnly={readOnly} value={a?.eventType}
+                onChange={(v) => this.updateAttribute('eventType', v)} />
+            </Grid>
+          )}
           <Grid item xs={4} className={classes.item}>
             <ActivityCategoryPicker withLabel readOnly={readOnly} value={a?.category}
               onChange={(v) => this.updateAttributes({ category: v, categoryId: v?.id ?? null })} />

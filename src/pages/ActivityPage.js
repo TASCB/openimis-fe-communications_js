@@ -37,6 +37,7 @@ function ActivityPage({ activityUuid, variant }) {
   const [edited, setEdited] = useState({
     status: ACTIVITY_STATUS.DRAFT,
     activityType: isEvent ? EVENT_DEFAULT_TYPE : 'OTHER',
+    ...(isEvent ? { eventType: 'PUBLIC' } : {}),
   });
   const [resetKey, setResetKey] = useState(0);
   const prev = useRef();
