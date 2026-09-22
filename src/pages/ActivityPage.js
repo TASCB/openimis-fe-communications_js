@@ -129,7 +129,7 @@ function ActivityPage({ activityUuid, variant }) {
         save={save}
         canSave={canSave}
         saveTooltip={formatMessage('saveButton.tooltip')}
-        HeadPanel={ActivityHeadPanel}
+        Panels={[ActivityHeadPanel]}
         Panels={getPanels()}
         actions={actions}
         readOnly={!canEditDetails}

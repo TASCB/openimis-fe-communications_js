@@ -1,7 +1,7 @@
 import React from 'react';
 import { injectIntl } from 'react-intl';
 import {
-  Divider, Grid, Typography, FormControlLabel, Checkbox,
+  Checkbox, Divider, FormControlLabel, Grid, Paper, Typography,
 } from '@material-ui/core';
 import { withStyles, withTheme } from '@material-ui/core/styles';
 import {
@@ -10,7 +10,8 @@ import {
 import MediaHousePicker from '../pickers/MediaHousePicker';
 import { JournalistRolePicker } from '../pickers/ConstantPickers';
 
-const styles = (theme) => ({ tableTitle: theme.table.title, item: theme.paper.item });
+const styles = (theme) => ({ paper: theme.paper.paper,
+  tableTitle: theme.table.title, item: theme.paper.item });
 
 class JournalistHeadPanel extends FormPanel {
   render() {
@@ -21,7 +22,7 @@ class JournalistHeadPanel extends FormPanel {
       checked ? { isFreelance: true, mediaHouse: null, mediaHouseId: null } : { isFreelance: false },
     );
     return (
-      <>
+      <Paper className={classes.paper}>
         <Grid container className={classes.tableTitle}>
           <Grid item>
             <Typography><FormattedMessage module="communications" id="communications.journalist.headPanel.title" /></Typography>
@@ -98,7 +99,7 @@ class JournalistHeadPanel extends FormPanel {
               value={j?.notes} onChange={(v) => this.updateAttribute('notes', v)} />
           </Grid>
         </Grid>
-      </>
+      </Paper>
     );
   }
 }

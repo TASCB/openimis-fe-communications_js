@@ -86,7 +86,7 @@ function JournalistPage({ journalistUuid }) {
         save={save}
         canSave={canSave}
         saveTooltip={formatMessage('saveButton.tooltip')}
-        HeadPanel={JournalistHeadPanel}
+        Panels={[JournalistHeadPanel]}
         readOnly={!canEdit}
         rights={rights}
       />

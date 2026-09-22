@@ -1,6 +1,8 @@
 import React from 'react';
 import { injectIntl } from 'react-intl';
-import { Divider, Grid, Typography } from '@material-ui/core';
+import {
+  Divider, Grid, Paper, Typography,
+} from '@material-ui/core';
 import { withStyles, withTheme } from '@material-ui/core/styles';
 import { Checkbox, FormControlLabel } from '@material-ui/core';
 import {
@@ -11,7 +13,8 @@ import { ACTIVITY_TYPE_EVENT } from '../constants';
 import ActivityCategoryPicker from '../pickers/ActivityCategoryPicker';
 import ActivityProfileCard from './ActivityProfileCard';
 
-const styles = (theme) => ({ tableTitle: theme.table.title, item: theme.paper.item });
+const styles = (theme) => ({ paper: theme.paper.paper,
+  tableTitle: theme.table.title, item: theme.paper.item });
 
 class ActivityHeadPanel extends FormPanel {
   render() {
@@ -29,7 +32,7 @@ class ActivityHeadPanel extends FormPanel {
     const isVirtual = !!a?.virtualPlatform;
     const toggleVirtual = (on) => this.updateAttribute('virtualPlatform', on ? ' ' : null);
     return (
-      <>
+      <Paper className={classes.paper}>
         <Grid container className={classes.tableTitle}>
           <Grid item>
             <Typography><FormattedMessage module="communications" id="communications.headPanel.planning" /></Typography>
@@ -165,7 +168,7 @@ class ActivityHeadPanel extends FormPanel {
             </>
           )}
         </Grid>
-      </>
+      </Paper>
     );
   }
 }

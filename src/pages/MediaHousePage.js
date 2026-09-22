@@ -84,7 +84,7 @@ function MediaHousePage({ mediaHouseUuid }) {
         save={save}
         canSave={canSave}
         saveTooltip={formatMessage('saveButton.tooltip')}
-        HeadPanel={MediaHouseHeadPanel}
+        Panels={[MediaHouseHeadPanel]}
         readOnly={!canEdit}
         rights={rights}
       />

@@ -1,6 +1,8 @@
 import React from 'react';
 import { injectIntl } from 'react-intl';
-import { Divider, Grid, Typography } from '@material-ui/core';
+import {
+  Divider, Grid, Paper, Typography,
+} from '@material-ui/core';
 import { withStyles, withTheme } from '@material-ui/core/styles';
 import {
   FormattedMessage, FormPanel, PublishedComponent, TextInput,
@@ -8,7 +10,8 @@ import {
 import MediaHouseCategoryPicker from '../pickers/MediaHouseCategoryPicker';
 import JournalistPicker from '../pickers/JournalistPicker';
 
-const styles = (theme) => ({ tableTitle: theme.table.title, item: theme.paper.item });
+const styles = (theme) => ({ paper: theme.paper.paper,
+  tableTitle: theme.table.title, item: theme.paper.item });
 
 class MediaHouseHeadPanel extends FormPanel {
   render() {
@@ -16,7 +19,7 @@ class MediaHouseHeadPanel extends FormPanel {
     const formatMessage = (id) => intl.formatMessage({ id });
     const h = { ...edited };
     return (
-      <>
+      <Paper className={classes.paper}>
         <Grid container className={classes.tableTitle}>
           <Grid item>
             <Typography><FormattedMessage module="communications" id="communications.mediaHouse.headPanel.title" /></Typography>
@@ -83,7 +86,7 @@ class MediaHouseHeadPanel extends FormPanel {
               value={h?.notes} onChange={(v) => this.updateAttribute('notes', v)} />
           </Grid>
         </Grid>
-      </>
+      </Paper>
     );
   }
 }
