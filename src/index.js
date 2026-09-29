@@ -78,7 +78,7 @@ const DEFAULT_CONFIG = {
   'core.Router': [
     { path: ROUTE_ACTIVITIES, component: ActivitiesPage },
     { path: `${ROUTE_ACTIVITY}/:activity_uuid?`, component: ActivityPage },
-    { path: ROUTE_FEED, component: FeedPage },
+    { path: `${ROUTE_FEED}/:post_uuid?`, component: FeedPage },
     { path: ROUTE_CALENDAR, component: CalendarPage },
     { path: ROUTE_DASHBOARD, component: DashboardPage },
     { path: ROUTE_LIBRARY, component: LibraryPage },

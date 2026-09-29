@@ -56,7 +56,7 @@ const JOURNALIST_PROJECTION = () => [
 ];
 const POST_ATTACHMENT_PROJECTION = () => ['id', 'uuid', 'fileName', 'fileType', 'fileSize', 'description', 'dateCreated', 'userCreated { username }'];
 const POST_PROJECTION = () => [
-  'id', 'title', 'body', 'postType', 'isPublished', 'isPinned', 'publishedAt',
+  'id', 'uuid', 'title', 'body', 'postType', 'isPublished', 'isPinned', 'publishedAt',
   'dateCreated', 'userCreated { username }', 'activity { id code title }',
   `attachments { ${POST_ATTACHMENT_PROJECTION().join(' ')} }`,
 ];
@@ -413,7 +413,7 @@ export const clearConflicts = () => (dispatch) => dispatch({ type: CLEAR(ACTION_
 
 // Announcements (login modal)
 export function fetchAnnouncements(modulesManager) {
-  const query = `query { communicationPostsUnread { id title body postType isPublished isPinned publishedAt dateCreated userCreated { username } attachments { id uuid fileName fileType fileSize } } }`;
+  const query = `query { communicationPostsUnread { id uuid title body postType isPublished isPinned publishedAt dateCreated userCreated { username } attachments { id uuid fileName fileType fileSize } } }`;
   return graphql(query, ACTION_TYPE.SEARCH_ANNOUNCEMENTS, { gqlField: 'communicationPostsUnread' });
 }
 

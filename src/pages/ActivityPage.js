@@ -20,6 +20,10 @@ import ActivityTabsPlaceholder from '../components/ActivityTabsPlaceholder';
 
 const useStyles = makeStyles((theme) => ({ page: theme.page }));
 
+// Stepping back or stopping (reject, cancel, revise) is a plain text action; only the
+// step forward is filled, matching the approval pages.
+const SECONDARY_ACTIONS = ['reject', 'cancel', 'revise'];
+
 // One form, two variants: an event IS an activity. See the guide before splitting them.
 function ActivityPage({ activityUuid, variant }) {
   const isEvent = variant === 'event';
@@ -93,11 +97,16 @@ function ActivityPage({ activityUuid, variant }) {
 
   const actions = (!isNew ? (STATUS_ACTIONS[edited?.status] || []) : [])
     .filter((a) => rights.includes(a.right))
+    .sort((a, b) => Number(!SECONDARY_ACTIONS.includes(a.action)) - Number(!SECONDARY_ACTIONS.includes(b.action)))
     .map((a) => ({
       onlyIfNotDirty: true,
       tooltip: formatMessage(`communications.action.${a.action}`),
       button: (
-        <Button variant="contained" color="primary" onClick={() => onAction(a.action)}>
+        <Button
+          variant={SECONDARY_ACTIONS.includes(a.action) ? 'text' : 'contained'}
+          color="primary"
+          onClick={() => onAction(a.action)}
+        >
           {formatMessage(`communications.action.${a.action}`)}
         </Button>
       ),

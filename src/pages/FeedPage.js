@@ -24,10 +24,12 @@ import VisibilityOutlined from '@material-ui/icons/VisibilityOutlined';
 import GetAppOutlined from '@material-ui/icons/GetAppOutlined';
 import Close from '@material-ui/icons/Close';
 import {
-  Helmet, useTranslations, useModulesManager, journalize, ProgressOrError,
+  Helmet, useTranslations, useModulesManager, useHistory, journalize, ProgressOrError,
   formatMessageWithValues, baseApiUrl,
 } from '@openimis/fe-core';
-import { MODULE_NAME, RIGHT_POST_MANAGE, RIGHT_POST_PUBLISH } from '../constants';
+import {
+  MODULE_NAME, RIGHT_POST_MANAGE, RIGHT_POST_PUBLISH, COMMS_ROUTE_FEED,
+} from '../constants';
 import {
   fetchPosts, savePost, deletePost, setPostPublished,
   uploadPostAttachment, deletePostAttachment, uploadPostInlineImage, submitPostForApproval,
@@ -36,7 +38,7 @@ import RichTextEditor from '../components/RichTextEditor';
 import TemplatePicker from '../components/TemplatePicker';
 import RichText from '../components/RichText';
 import { htmlToText } from '../components/htmlSanitize';
-import { relTime } from '../utils/dates';
+import { parseDate, relTime } from '../utils/dates';
 
 const TYPES = ['ANNOUNCEMENT', 'UPDATE', 'MEDIA_HIGHLIGHT', 'NEWSLETTER'];
 const TYPE_META = {
@@ -164,7 +166,12 @@ const useStyles = makeStyles((theme) => {
     sectionHead: { display: 'flex', alignItems: 'center', gap: 8, color: muted, fontWeight: 800, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', margin: '20px 0 12px' },
     empty: { textAlign: 'center', color: muted, padding: '40px 16px', background: '#fff', border: `1px dashed ${border}`, borderRadius: 14 },
 
-    card: { background: '#fff', border: `1px solid ${border}`, borderRadius: 14, padding: 20, marginBottom: 16, boxShadow: '0 1px 2px rgba(16,42,67,.05)' },
+    card: { background: '#fff', border: `1px solid ${border}`, borderRadius: 14, padding: 20, marginBottom: 16, boxShadow: '0 1px 2px rgba(16,42,67,.05)', scrollMarginTop: 96 },
+    cardFocused: { borderColor: teal, boxShadow: `0 0 0 3px ${teal}33` },
+    singleBar: {
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16,
+      padding: '10px 16px', borderRadius: 10, background: '#eef5f2', border: `1px solid ${border}`, fontSize: 13.5, color: ink,
+    },
     cardTop: { display: 'flex', alignItems: 'flex-start', gap: 12 },
     typeIcon: { width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     cardMain: { flex: 1, minWidth: 0 },
@@ -256,16 +263,18 @@ function AttachmentCard({
 function PostCard({ ctx, post }) {
   const {
     classes, fm, fmv, canManage, canPublish, onPin, onEdit, onArchive, onDelete, onDeleteAttachment, onSubmitForApproval,
+    focusUuid,
   } = ctx;
   const attachments = post.attachments || [];
-  const [expanded, setExpanded] = useState(false);
+  const focused = !!focusUuid && post.uuid === focusUuid;
+  const [expanded, setExpanded] = useState(focused);
   const meta = TYPE_META[post.postType] || TYPE_META.ANNOUNCEMENT;
   const { Icon } = meta;
   const published = post.isPublished;
   const long = htmlToText(post.body).length > 260 || /<(img|h2|h3|ul|ol)[\s>]/i.test(post.body || '');
 
   return (
-    <Paper elevation={0} className={classes.card}>
+    <Paper elevation={0} id={`post-${post.uuid}`} className={`${classes.card} ${focused ? classes.cardFocused : ''}`}>
       <div className={classes.cardTop}>
         <span className={classes.typeIcon} style={{ background: `${meta.color}14`, color: meta.color }}>
           <Icon style={{ fontSize: 20 }} />
@@ -372,11 +381,12 @@ function PostCard({ ctx, post }) {
   );
 }
 
-function FeedPage() {
+function FeedPage({ match }) {
   const classes = useStyles();
   const intl = useIntl();
   const dispatch = useDispatch();
   const modulesManager = useModulesManager();
+  const history = useHistory();
   const { formatMessage } = useTranslations(MODULE_NAME, modulesManager);
   const fm = (id) => formatMessage(id);
   const fmv = (id, values) => formatMessageWithValues(intl, MODULE_NAME, id, values);
@@ -406,8 +416,34 @@ function FeedPage() {
   // After a save lands, upload staged files to the resolved post, then publish if requested.
   const pending = useRef(null); // { id?, title, publish, files: [File] }
 
+  const focusUuid = match?.params?.post_uuid;
+  // A deep link to a post older than the first 100 loads that post alone.
+  const [singleView, setSingleView] = useState(false);
+  const scrolledTo = useRef(null);
+
   const refetch = () => dispatch(fetchPosts(modulesManager, ['first: 100']));
   useEffect(() => { refetch(); }, []);
+  useEffect(() => {
+    if (!focusUuid || fetching || !posts) return;
+    if (posts.some((p) => p.uuid === focusUuid)) {
+      if (scrolledTo.current === focusUuid) return;
+      scrolledTo.current = focusUuid;
+      setFilter('ALL');
+      setSearch('');
+      setTimeout(() => {
+        const el = document.getElementById(`post-${focusUuid}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 0);
+    } else if (!singleView) {
+      setSingleView(true);
+      dispatch(fetchPosts(modulesManager, [`id: "${focusUuid}"`]));
+    }
+  }, [focusUuid, posts, fetching]); // eslint-disable-line react-hooks/exhaustive-deps
+  const showAll = () => {
+    setSingleView(false);
+    history.push(`/${modulesManager.getRef(COMMS_ROUTE_FEED)}`);
+    refetch();
+  };
   useEffect(() => {
     if (prev.current && !submitting) { dispatch(journalize(mutation)); refetch(); }
   }, [submitting]);
@@ -515,6 +551,7 @@ function FeedPage() {
 
   const cardCtx = {
     classes, fm, fmv, canManage, canPublish, onPin: togglePin, onEdit: startEdit, onArchive: archive, onDelete: del, onDeleteAttachment: delAttachment, onSubmitForApproval: submitForApproval,
+    focusUuid,
   };
 
   const segments = [['ALL', fm('communications.filter.all')], ...TYPES.map((t) => [t, fm(`communications.postType.${t}`)])];
@@ -697,6 +734,12 @@ function FeedPage() {
 
       {!fetching && !error && (
         <>
+          {singleView && (
+            <div className={classes.singleBar}>
+              <span>{fm('communications.feed.singlePost')}</span>
+              <button type="button" className={classes.btnGhost} onClick={showAll}>{fm('communications.feed.showAll')}</button>
+            </div>
+          )}
           {pinned.length > 0 && (
             <>
               <div className={classes.sectionHead}><FlagOutlined style={{ fontSize: 15 }} />{fm('communications.section.pinned')}</div>
