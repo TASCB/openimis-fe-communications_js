@@ -4,6 +4,7 @@ import { connect, useSelector } from 'react-redux';
 import { IconButton, Tooltip, Chip } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import DeleteIcon from '@material-ui/icons/Delete';
+import VisibilityIcon from '@material-ui/icons/Visibility';
 import {
   Searcher, useHistory, useModulesManager, useTranslations, journalize, coreConfirm, clearConfirm,
 } from '@openimis/fe-core';
@@ -13,11 +14,12 @@ import {
   COMMS_ROUTE_JOURNALIST,
 } from '../constants';
 import JournalistFilter from './JournalistFilter';
+import JournalistPreviewDialog from './JournalistPreviewDialog';
 
 const useStyles = makeStyles(() => ({
   searcher: {
     '& table th': { whiteSpace: 'nowrap' },
-    '& table th:last-child, & table td:last-child': { width: 32 },
+    '& table th:last-child, & table td:last-child': { whiteSpace: 'nowrap', textAlign: 'right' },
   },
 }));
 
@@ -32,6 +34,7 @@ function JournalistSearcher({
   const { formatMessage, formatMessageWithValues } = useTranslations('communications', modulesManager);
   const rights = useSelector((s) => s.core.user.i_user.rights ?? []);
   const [toDelete, setToDelete] = useState(null);
+  const [viewed, setViewed] = useState(null);
   const [params, setParams] = useState([]);
   const prev = useRef();
 
@@ -59,54 +62,45 @@ function JournalistSearcher({
   }, [submittingMutation]);
   useEffect(() => { prev.current = submittingMutation; });
 
-  const headers = () => {
-    const h = [
-      'communications.code', 'communications.journalist.name', 'communications.journalist.mediaHouse',
-      'communications.journalistRole', 'communications.journalist.beat', 'communications.journalist.contact',
-      'communications.mediaHouse.location', 'communications.journalist.performance',
-    ];
-    if (rights.includes(RIGHT_JOURNALIST_DELETE)) h.push('emptyLabel');
-    return h;
-  };
-  const sorts = () => {
-    const s = [['code', true], ['lastName', true], null, ['role', true], null, null, null, null];
-    if (rights.includes(RIGHT_JOURNALIST_DELETE)) s.push(null);
-    return s;
-  };
+  const headers = () => [
+    'communications.journalist.name', 'communications.journalist.mediaHouse', 'communications.journalistRole',
+    'communications.journalist.contact', 'communications.location', 'communications.actions',
+  ];
+  const sorts = () => [['lastName', true], null, ['role', true], null, null, null];
   const fetch = (p) => { setParams(p); return fetchJournalists(modulesManager, p); };
   const itemFormatters = () => {
     const f = [
-      (j) => j?.code,
       (j) => `${j?.firstName ?? ''} ${j?.lastName ?? ''}`.trim(),
       (j) => (j?.isFreelance
         ? <Chip size="small" label={formatMessage('communications.journalist.freelance')} />
         : (j?.mediaHouse?.name ?? '')),
       (j) => (j?.role ? formatMessage(`communications.journalistRole.${j.role}`) : ''),
-      (j) => j?.beat ?? '',
       (j) => [j?.phone, j?.email].filter(Boolean).join(' · '),
       (j) => j?.location?.name ?? '',
-      // Derived from attributed coverage — stories filed and the quality of those stories.
-      // Never a stored score on the person.
-      (j) => {
-        const filed = j?.storiesFiled ?? 0;
-        if (!filed && j?.avgCoverageQuality == null) return '';
-        const q = j?.avgCoverageQuality != null ? ` · ${Number(j.avgCoverageQuality).toFixed(1)}/5` : '';
-        return `${filed} ${formatMessage('communications.journalist.stories')}${q}`;
-      },
+      (j) => (
+        <>
+          <Tooltip title={formatMessage('communications.journalist.view')}>
+            <IconButton onClick={() => setViewed(j)}><VisibilityIcon /></IconButton>
+          </Tooltip>
+          {rights.includes(RIGHT_JOURNALIST_DELETE) && (
+            <Tooltip title={formatMessage('deleteButton.tooltip')}>
+              <IconButton onClick={() => setToDelete(j)}><DeleteIcon /></IconButton>
+            </Tooltip>
+          )}
+        </>
+      ),
     ];
-    if (rights.includes(RIGHT_JOURNALIST_DELETE)) {
-      f.push((j) => (
-        <Tooltip title={formatMessage('deleteButton.tooltip')}>
-          <IconButton onClick={() => setToDelete(j)}><DeleteIcon /></IconButton>
-        </Tooltip>
-      ));
-    }
     return f;
   };
   const filterPane = ({ filters, onChangeFilters }) => <JournalistFilter filters={filters} onChangeFilters={onChangeFilters} />;
 
   return (
     <div className={classes.searcher}>
+      <JournalistPreviewDialog
+        journalist={viewed}
+        onClose={() => setViewed(null)}
+        onEdit={rights.includes(RIGHT_JOURNALIST_UPDATE) ? open : null}
+      />
       <Searcher
         module="communications"
         FilterPane={filterPane}
@@ -123,7 +117,7 @@ function JournalistSearcher({
         rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
         defaultPageSize={DEFAULT_PAGE_SIZE}
         rowIdentifier={(j) => j.id}
-        onDoubleClick={open}
+        onDoubleClick={(j) => setViewed(j)}
       />
     </div>
   );

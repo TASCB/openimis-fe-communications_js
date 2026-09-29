@@ -2,9 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect, useSelector } from 'react-redux';
 import { useIntl } from 'react-intl';
-import {
-  IconButton, Tooltip, Dialog, DialogContent, DialogActions, Button,
-} from '@material-ui/core';
+import { IconButton, Tooltip } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -18,16 +16,15 @@ import {
 } from '../constants';
 import ActivityFilter from './ActivityFilter';
 import ActivityStatusChip from './ActivityStatusChip';
-import ActivityProfileCard from './ActivityProfileCard';
+import ActivityPreviewDialog from './ActivityPreviewDialog';
 
 const useStyles = makeStyles(() => ({
   searcher: {
-    '& table': { tableLayout: 'fixed' },
     '& table th': { whiteSpace: 'nowrap' },
-    '& table th:nth-child(8), & table td:nth-child(8)': { width: 56 },
-    '& table th:nth-child(9), & table td:nth-child(9)': { width: 56 },
-    '& table th:last-child, & table td:last-child': { width: 32 },
+    '& table th:last-child, & table td:last-child': { whiteSpace: 'nowrap', textAlign: 'right' },
   },
+  sub: { fontSize: 12, color: '#5c6e64', marginTop: 2 },
+  when: { whiteSpace: 'nowrap' },
 }));
 
 // `extraFilters` pins a fixed server-side filter (the Events page scopes by activity type).
@@ -71,70 +68,63 @@ function ActivitySearcher({
   }, [submittingMutation]);
   useEffect(() => { prev.current = submittingMutation; });
 
-  // One column per action (view, delete) so the icons align and never wrap — openIMIS fe-individual pattern.
-  const headers = () => {
-    const h = [
-      'communications.code', 'communications.title', 'communications.activityType', 'communications.status',
-      'communications.startDatetime', 'communications.endDatetime', 'communications.venue',
-    ];
-    h.push('emptyLabel');
-    if (rights.includes(RIGHT_ACTIVITY_DELETE)) h.push('emptyLabel'); 
-    h.push('emptyLabel');
-    return h;
-  };
-  const sorts = () => {
-    const s = [
-      ['code', true], ['title', true], ['activityType', true], ['status', true],
-      ['startDatetime', true], ['endDatetime', true], null,
-    ];
-    s.push(null);
-    if (rights.includes(RIGHT_ACTIVITY_DELETE)) s.push(null);
-    s.push(null);
-    return s;
-  };
+  const headers = () => [
+    'communications.code', 'communications.title', 'communications.activityType', 'communications.status',
+    'communications.activity.when', 'communications.venue', 'communications.actions',
+  ];
+  const sorts = () => [
+    ['code', true], ['title', true], ['activityType', true], ['status', true], ['startDatetime', true], null, null,
+  ];
+  const fmtDate = (v) => (v ? formatDateFromISO(modulesManager, intl, v) : '');
   const fetch = (p) => {
     const all = [...p, ...extraFilters];
     setParams(all);
     return fetchActivities(modulesManager, all);
   };
-  const itemFormatters = () => {
-    const f = [
-      (a) => a?.code,
-      (a) => a?.title,
-      (a) => (a?.activityType ? formatMessage(`communications.activityType.${a.activityType}`) : ''),
-      (a) => <ActivityStatusChip status={a?.status} />,
-      (a) => (a?.startDatetime ? formatDateFromISO(modulesManager, intl, a.startDatetime) : ''),
-      (a) => (a?.endDatetime ? formatDateFromISO(modulesManager, intl, a.endDatetime) : ''),
-      (a) => a?.venue ?? '',
-    ];
-    f.push((a) => (
-      <Tooltip title={formatMessage('viewDetailsButton.tooltip')}>
-        <IconButton onClick={() => setViewed(a)}><VisibilityIcon /></IconButton>
-      </Tooltip>
-    ));
-    if (rights.includes(RIGHT_ACTIVITY_DELETE)) {
-      f.push((a) => (![ACTIVITY_STATUS.ARCHIVED].includes(a?.status) ? (
-        <Tooltip title={formatMessage('deleteButton.tooltip')}>
-          <IconButton onClick={() => setToDelete(a)}><DeleteIcon /></IconButton>
+  const itemFormatters = () => [
+    (a) => a?.code,
+    (a) => (
+      <>
+        <div>{a?.title}</div>
+        {a?.category?.name && <div className={classes.sub}>{a.category.name}</div>}
+      </>
+    ),
+    (a) => (a?.activityType ? formatMessage(`communications.activityType.${a.activityType}`) : ''),
+    (a) => <ActivityStatusChip status={a?.status} />,
+    (a) => (a?.startDatetime ? (
+      <span className={classes.when}>
+        {fmtDate(a.startDatetime)}
+        {a.endDatetime && fmtDate(a.endDatetime) !== fmtDate(a.startDatetime) ? ` → ${fmtDate(a.endDatetime)}` : ''}
+      </span>
+    ) : ''),
+    (a) => (
+      <>
+        <div>{a?.venue || a?.virtualPlatform || ''}</div>
+        {a?.location?.name && <div className={classes.sub}>{a.location.name}</div>}
+      </>
+    ),
+    (a) => (
+      <>
+        <Tooltip title={formatMessage('viewDetailsButton.tooltip')}>
+          <IconButton onClick={() => setViewed(a)}><VisibilityIcon /></IconButton>
         </Tooltip>
-      ) : null));
-    }
-    f.push(() => '');
-    return f;
-  };
+        {rights.includes(RIGHT_ACTIVITY_DELETE) && a?.status !== ACTIVITY_STATUS.ARCHIVED && (
+          <Tooltip title={formatMessage('deleteButton.tooltip')}>
+            <IconButton onClick={() => setToDelete(a)}><DeleteIcon /></IconButton>
+          </Tooltip>
+        )}
+      </>
+    ),
+  ];
   const filterPane = ({ filters, onChangeFilters }) => <ActivityFilter filters={filters} onChangeFilters={onChangeFilters} />;
 
   return (
     <>
-      <Dialog open={!!viewed} onClose={() => setViewed(null)} maxWidth="md" fullWidth PaperProps={{ style: { borderRadius: 0 } }}>
-        <DialogContent style={{ padding: 0 }}>{viewed && <ActivityProfileCard activity={viewed} />}</DialogContent>
-        <DialogActions>
-          {viewed && rights.includes(RIGHT_ACTIVITY_SEARCH) && (
-            <Button color="primary" onClick={() => open(viewed)}>{formatMessage('communications.open')}</Button>
-          )}
-          <Button onClick={() => setViewed(null)}>{formatMessage('communications.close')}</Button>
-        </DialogActions>
-      </Dialog>
+      <ActivityPreviewDialog
+        activity={viewed}
+        onClose={() => setViewed(null)}
+        onOpen={rights.includes(RIGHT_ACTIVITY_SEARCH) ? open : null}
+      />
       <div className={classes.searcher}>
         <Searcher
           module="communications"
