@@ -113,7 +113,7 @@ function ActivityPage({ activityUuid, variant }) {
     }));
 
   const getPanels = () => {
-    const panels = [ConflictBanner];
+    const panels = [ActivityHeadPanel, ConflictBanner];
     // Child sections need an id, so on create they show disabled rather than hidden.
     panels.push(isNew ? ActivityTabsPlaceholder : ActivityTabs);
     return panels;
@@ -138,7 +138,6 @@ function ActivityPage({ activityUuid, variant }) {
         save={save}
         canSave={canSave}
         saveTooltip={formatMessage('saveButton.tooltip')}
-        Panels={[ActivityHeadPanel]}
         Panels={getPanels()}
         actions={actions}
         readOnly={!canEditDetails}
