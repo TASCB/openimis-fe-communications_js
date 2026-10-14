@@ -3,9 +3,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import {
   Paper, Grid, Tab, Table, TableHead, TableRow, TableCell, TableBody,
-  IconButton, Button, Tooltip, TextField, Link,
+  IconButton, Button, Tooltip, Link, Typography, Divider, Switch, FormControlLabel,
 } from '@material-ui/core';
-import DeleteIcon from '@material-ui/icons/Delete';
+import EditOutlined from '@material-ui/icons/EditOutlined';
 import DeleteOutlineIcon from '@material-ui/icons/DeleteOutline';
 import {
   Helmet, useTranslations, useModulesManager, journalize, baseApiUrl, TextInput, useToast,
@@ -20,6 +20,7 @@ import {
   fetchLibraryAssets, deleteLibraryAsset, uploadLibraryAsset,
 } from '../actions';
 import { ChannelTypePicker, AssetTypePicker } from '../pickers/ConstantPickers';
+import RichTextEditor from '../components/RichTextEditor';
 
 const useStyles = makeStyles((theme) => ({
   page: theme.page,
@@ -30,56 +31,165 @@ const useStyles = makeStyles((theme) => ({
   unselectedTab: { borderBottom: '4px solid transparent' },
   content: { padding: theme.spacing(2) },
   item: theme.paper.item,
+  form: { padding: theme.spacing(1, 0) },
+  formTitle: { color: theme.palette.primary.main, fontWeight: 500 },
+  caption: { display: 'block', color: theme.palette.primary.main, fontSize: '0.75rem', marginBottom: 8 },
+  actions: { display: 'flex', justifyContent: 'flex-end', gap: theme.spacing(1) },
   empty: { color: theme.palette.text.secondary, textAlign: 'center', padding: theme.spacing(3) },
 }));
+
+const BLANK_TEMPLATE = {
+  id: null, code: '', name: '', channelType: 'EMAIL', subject: '', body: '', isActive: true,
+};
 
 const BLANK_ASSET = {
   code: '', name: '', assetType: 'DOCUMENT', description: '', file: null,
 };
 
 function TemplatesTab() {
+  const classes = useStyles();
   const dispatch = useDispatch();
   const modulesManager = useModulesManager();
-  const { formatMessage } = useTranslations(MODULE_NAME, modulesManager);
+  const { formatMessage, formatMessageWithValues } = useTranslations(MODULE_NAME, modulesManager);
   const rights = useSelector((s) => s.core.user.i_user.rights ?? []);
   const items = useSelector((s) => s.communications.templates);
   const submitting = useSelector((s) => s.communications.submittingMutation);
   const mutation = useSelector((s) => s.communications.mutation);
-  const [row, setRow] = useState({ code: '', name: '', channelType: 'EMAIL' });
+  const confirmed = useSelector((s) => s.core.confirmed);
+  const [form, setForm] = useState(BLANK_TEMPLATE);
+  const [toDelete, setToDelete] = useState(null);
   const prev = useRef();
   const refetch = () => dispatch(fetchTemplates(modulesManager, ['first: 100']));
   useEffect(() => { refetch(); }, []);
   useEffect(() => { if (prev.current && !submitting) { dispatch(journalize(mutation)); refetch(); } }, [submitting]);
   useEffect(() => { prev.current = submitting; });
+  useEffect(() => {
+    if (toDelete) {
+      dispatch(coreConfirm(
+        formatMessage('communications.template.deleteDialog.title'),
+        formatMessageWithValues('communications.template.deleteDialog.message', { name: toDelete.name }),
+      ));
+    }
+  }, [toDelete]);
+  useEffect(() => {
+    if (toDelete && confirmed) dispatch(deleteTemplate(toDelete, formatMessage('communications.template.delete')));
+    if (confirmed !== null) setToDelete(null);
+    return () => confirmed !== null && dispatch(clearConfirm(false));
+  }, [confirmed]);
+
   const canManage = rights.includes(RIGHT_TEMPLATE_MANAGE);
-  const add = () => { if (row.code && row.name) { dispatch(saveTemplate({ ...row, isActive: true }, formatMessage('communications.template.add'))); setRow({ code: '', name: '', channelType: 'EMAIL' }); } };
+  const ready = !!(form.code.trim() && form.name.trim());
+  const save = () => {
+    if (!ready) return;
+    dispatch(saveTemplate(form, formatMessage(form.id ? 'communications.template.update' : 'communications.template.add')));
+    setForm(BLANK_TEMPLATE);
+  };
+  const edit = (t) => setForm({
+    id: t.id,
+    code: t.code || '',
+    name: t.name || '',
+    channelType: t.channelType || BLANK_TEMPLATE.channelType,
+    subject: t.subject || '',
+    body: t.body || '',
+    isActive: t.isActive !== false,
+  });
+  const list = items ?? [];
+
   return (
-    <Table size="small">
-      <TableHead><TableRow>
-        <TableCell>{formatMessage('communications.code')}</TableCell>
-        <TableCell>{formatMessage('communications.template.name')}</TableCell>
-        <TableCell>{formatMessage('communications.channelType')}</TableCell>
-        <TableCell />
-      </TableRow></TableHead>
-      <TableBody>
-        {(items ?? []).map((t) => (
-          <TableRow key={t.id}>
-            <TableCell>{t.code}</TableCell>
-            <TableCell>{t.name}</TableCell>
-            <TableCell>{t.channelType ? formatMessage(`communications.channelType.${t.channelType}`) : ''}</TableCell>
-            <TableCell>{canManage && <Tooltip title={formatMessage('deleteButton.tooltip')}><IconButton size="small" onClick={() => dispatch(deleteTemplate(t, formatMessage('communications.template.delete')))}><DeleteIcon /></IconButton></Tooltip>}</TableCell>
-          </TableRow>
-        ))}
-        {canManage && (
+    <>
+      {canManage && (
+        <>
+          <Grid container className={classes.form}>
+            <Grid item xs={12} className={classes.item}>
+              <Typography className={classes.formTitle}>
+                {formatMessage(form.id ? 'communications.template.editTitle' : 'communications.template.add')}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={2} className={classes.item}>
+              <TextInput module="communications" label="communications.code" required readOnly={!!form.id}
+                value={form.code} onChange={(v) => setForm((f) => ({ ...f, code: v }))} />
+            </Grid>
+            <Grid item xs={12} md={4} className={classes.item}>
+              <TextInput module="communications" label="communications.template.name" required
+                value={form.name} onChange={(v) => setForm((f) => ({ ...f, name: v }))} />
+            </Grid>
+            <Grid item xs={12} md={3} className={classes.item}>
+              <ChannelTypePicker withLabel value={form.channelType}
+                onChange={(v) => setForm((f) => ({ ...f, channelType: v || BLANK_TEMPLATE.channelType }))} />
+            </Grid>
+            <Grid item xs={12} md={3} className={classes.item}>
+              <FormControlLabel
+                control={<Switch color="primary" checked={form.isActive} onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))} />}
+                label={formatMessage('communications.template.active')}
+              />
+            </Grid>
+            <Grid item xs={12} className={classes.item}>
+              <TextInput module="communications" label="communications.template.subject"
+                value={form.subject} onChange={(v) => setForm((f) => ({ ...f, subject: v }))} />
+            </Grid>
+            <Grid item xs={12} className={classes.item}>
+              <span className={classes.caption}>{formatMessage('communications.template.body')}</span>
+              <RichTextEditor
+                value={form.body}
+                onChange={(html) => setForm((f) => ({ ...f, body: html }))}
+                placeholder={formatMessage('communications.template.bodyHint')}
+                ariaLabel={formatMessage('communications.template.body')}
+                fm={formatMessage}
+              />
+            </Grid>
+            <Grid item xs={12} className={`${classes.item} ${classes.actions}`}>
+              {form.id && (
+                <Button onClick={() => setForm(BLANK_TEMPLATE)}>{formatMessage('communications.template.cancelEdit')}</Button>
+              )}
+              <Button variant="contained" color="primary" onClick={save} disabled={!ready}>
+                {formatMessage(form.id ? 'communications.template.saveChanges' : 'communications.template.add')}
+              </Button>
+            </Grid>
+          </Grid>
+          <Divider />
+        </>
+      )}
+      <Table size="small">
+        <TableHead>
           <TableRow>
-            <TableCell><TextField value={row.code} placeholder="code" onChange={(e) => setRow({ ...row, code: e.target.value })} /></TableCell>
-            <TableCell><TextField value={row.name} placeholder="name" onChange={(e) => setRow({ ...row, name: e.target.value })} /></TableCell>
-            <TableCell><ChannelTypePicker value={row.channelType} onChange={(v) => setRow({ ...row, channelType: v })} /></TableCell>
-            <TableCell><Button variant="contained" size="small" color="primary" onClick={add} disabled={!row.code || !row.name}>{formatMessage('addButton')}</Button></TableCell>
+            <TableCell>{formatMessage('communications.code')}</TableCell>
+            <TableCell>{formatMessage('communications.template.name')}</TableCell>
+            <TableCell>{formatMessage('communications.channelType')}</TableCell>
+            <TableCell>{formatMessage('communications.template.subject')}</TableCell>
+            <TableCell>{formatMessage('communications.template.active')}</TableCell>
+            <TableCell />
           </TableRow>
-        )}
-      </TableBody>
-    </Table>
+        </TableHead>
+        <TableBody>
+          {!list.length && (
+            <TableRow>
+              <TableCell colSpan={6} className={classes.empty}>{formatMessage('communications.template.empty')}</TableCell>
+            </TableRow>
+          )}
+          {list.map((t) => (
+            <TableRow key={t.id} selected={form.id === t.id}>
+              <TableCell>{t.code}</TableCell>
+              <TableCell>{t.name}</TableCell>
+              <TableCell>{t.channelType ? formatMessage(`communications.channelType.${t.channelType}`) : ''}</TableCell>
+              <TableCell>{t.subject}</TableCell>
+              <TableCell>{formatMessage(t.isActive === false ? 'communications.template.inactive' : 'communications.template.activeYes')}</TableCell>
+              <TableCell align="right" style={{ whiteSpace: 'nowrap' }}>
+                {canManage && (
+                  <>
+                    <Tooltip title={formatMessage('communications.action.edit')}>
+                      <IconButton size="small" onClick={() => edit(t)}><EditOutlined fontSize="small" /></IconButton>
+                    </Tooltip>
+                    <Tooltip title={formatMessage('deleteButton.tooltip')}>
+                      <IconButton size="small" onClick={() => setToDelete(t)}><DeleteOutlineIcon /></IconButton>
+                    </Tooltip>
+                  </>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </>
   );
 }
 
