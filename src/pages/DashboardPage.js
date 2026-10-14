@@ -35,7 +35,16 @@ const STATUS_FLOW = [
   ['CANCELLED', <BlockIcon />],
 ];
 
-const useStyles = makeStyles((theme) => ({ page: theme.page }));
+const useStyles = makeStyles((theme) => ({
+  page: theme.page,
+  cards: {
+    display: 'grid',
+    gap: theme.spacing(3),
+    gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+    [theme.breakpoints.down('sm')]: { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' },
+    [theme.breakpoints.down('xs')]: { gridTemplateColumns: 'minmax(0, 1fr)' },
+  },
+}));
 
 function DashboardPage() {
   const classes = useStyles();
@@ -123,13 +132,11 @@ function DashboardPage() {
 
       {!error && (
         <>
-          <Grid container spacing={3}>
+          <div className={classes.cards}>
             {cards.map(([l, v]) => (
-              <Grid item xs={12} sm={6} md={3} key={l}>
-                <StatCard label={t(l)} value={v} caption={t(`${l}.caption`)} onClick={goActivities} />
-              </Grid>
+              <StatCard key={l} label={t(l)} value={v} caption={t(`${l}.caption`)} onClick={goActivities} />
             ))}
-          </Grid>
+          </div>
 
           <Box mt={3}>
             <Grid container spacing={3}>
