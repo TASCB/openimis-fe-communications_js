@@ -281,6 +281,7 @@
   "communications.action.edit": "Edit",
   "communications.action.delete": "Delete",
   "communications.action.more": "More actions",
+  "communications.post.openImage": "Open image",
   "communications.post.deleteDialog.title": "Delete post",
   "communications.post.deleteDialog.message": "Delete the post \"{title}\"? It will be removed from the feed.",
   "communications.post.pinnedBadge": "Pinned",

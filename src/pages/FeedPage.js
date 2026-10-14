@@ -38,7 +38,7 @@ import RichTextEditor from '../components/RichTextEditor';
 import TemplatePicker from '../components/TemplatePicker';
 import { PostTypePicker } from '../pickers/ConstantPickers';
 import RichText from '../components/RichText';
-import { htmlToText } from '../components/htmlSanitize';
+import { htmlToText, sanitizeHtml } from '../components/htmlSanitize';
 import { parseDate, relTime } from '../utils/dates';
 
 const TYPES = ['ANNOUNCEMENT', 'UPDATE', 'MEDIA_HIGHLIGHT', 'NEWSLETTER'];
@@ -83,6 +83,11 @@ function fileKind(name, type) {
   if (['zip', 'rar', '7z', 'gz'].includes(ext)) return 'ZIP';
   return (ext || 'FILE').slice(0, 4).toUpperCase();
 }
+const bodyImages = (html) => {
+  const srcs = [];
+  sanitizeHtml(html || '').replace(/<img[^>]*\ssrc="([^"]+)"/gi, (m, src) => { srcs.push(src.replace(/&amp;/g, '&')); return m; });
+  return srcs;
+};
 const isImage = (att) => fileKind(att.fileName, att.fileType) === 'IMG'
   || (att.fileType || '').toLowerCase().includes('pdf');
 
@@ -179,9 +184,17 @@ const useStyles = makeStyles((theme) => {
       '& h3': { fontSize: 16.5, fontWeight: 800, margin: '4px 0 8px' },
       '& ul, & ol': { margin: '0 0 8px', paddingLeft: 22 },
       '& a': { color: teal, textDecoration: 'underline' },
-      '& img': { maxWidth: '100%', height: 'auto', borderRadius: 8, margin: '4px 0' },
+      '& img': {
+        display: 'block', maxWidth: '100%', maxHeight: 400, width: 'auto', height: 'auto',
+        borderRadius: 4, margin: '8px 0', cursor: 'zoom-in',
+      },
     },
-    bodyClamp: { maxHeight: 132, overflow: 'hidden', maskImage: 'linear-gradient(#000 70%, transparent)', WebkitMaskImage: 'linear-gradient(#000 70%, transparent)' },
+    bodyClamp: { maxHeight: 70, overflow: 'hidden', maskImage: 'linear-gradient(#000 60%, transparent)', WebkitMaskImage: 'linear-gradient(#000 60%, transparent)' },
+    thumbs: { display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+    thumb: {
+      display: 'block', height: 96, maxWidth: 200, objectFit: 'cover', borderRadius: 4,
+      border: `1px solid ${border}`, cursor: 'zoom-in',
+    },
     cardFooter: { display: 'flex', alignItems: 'center', gap: 16, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${border}`, color: muted, fontSize: 13 },
     footerItem: { display: 'inline-flex', alignItems: 'center', gap: 6 },
     menuIcon: { marginRight: 12, color: muted },
@@ -260,7 +273,14 @@ function PostCard({ ctx, post }) {
   const Icon = TYPE_ICONS[post.postType] || TYPE_ICONS.ANNOUNCEMENT;
   const published = post.isPublished;
   const state = postState(post);
-  const long = htmlToText(post.body).length > 260 || /<(img|h2|h3|ul|ol)[\s>]/i.test(post.body || '');
+  const images = useMemo(() => bodyImages(post.body), [post.body]);
+  const excerpt = useMemo(() => (post.body || '').replace(/<img[^>]*>/gi, ''), [post.body]);
+  const excerptText = htmlToText(excerpt).trim();
+  const long = excerptText.length > 260 || images.length > 0 || /<(h2|h3|ul|ol)[\s>]/i.test(post.body || '');
+  const collapsed = long && !expanded;
+  const openImage = (e) => {
+    if (e.target.tagName === 'IMG') window.open(e.target.src, '_blank', 'noopener');
+  };
 
   return (
     <Paper elevation={0} id={`post-${post.uuid}`} className={`${classes.card} ${focused ? classes.cardFocused : ''}`}>
@@ -343,9 +363,24 @@ function PostCard({ ctx, post }) {
 
       {post.body && (
         <>
-          <RichText html={post.body} className={`${classes.body} ${!expanded && long ? classes.bodyClamp : ''}`} />
+          {collapsed && excerptText && <RichText html={excerpt} className={`${classes.body} ${classes.bodyClamp}`} />}
+          {collapsed && images.length > 0 && (
+            <div className={classes.thumbs}>
+              {images.map((src) => (
+                <a key={src} href={src} target="_blank" rel="noopener noreferrer" aria-label={fm('communications.post.openImage')}>
+                  <img src={src} alt="" className={classes.thumb} />
+                </a>
+              ))}
+            </div>
+          )}
+          {!collapsed && (
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+            <div onClick={openImage}>
+              <RichText html={post.body} className={classes.body} />
+            </div>
+          )}
           {long && (
-            <button type="button" className={classes.linkBtn} style={{ marginTop: 8 }} onClick={() => setExpanded((v) => !v)}>
+            <button type="button" className={classes.linkBtn} style={{ display: 'block', marginTop: 8 }} onClick={() => setExpanded((v) => !v)}>
               {fm(expanded ? 'communications.readLess' : 'communications.readMore')}
             </button>
           )}
