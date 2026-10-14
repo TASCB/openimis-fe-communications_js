@@ -20,7 +20,7 @@ const ACTIVITY_CHANNEL_PROJECTION = () => [
 ];
 const OBJECTIVE_PROJECTION = () => ['id', 'description', 'indicator', 'unit', 'targetValue', 'achievedValue'];
 const AUDIENCE_PROJECTION = () => ['id', 'plannedCount', 'actualCount', 'notes', 'stakeholderType { id code name level }'];
-const ASSIGNMENT_PROJECTION = () => ['id', 'role', 'status', 'notes', 'staffUser { id username }'];
+const ASSIGNMENT_PROJECTION = () => ['id', 'role', 'status', 'notes', 'staffUser { id username otherNames lastName }'];
 const ATTACHMENT_PROJECTION = () => ['id', 'fileName', 'fileType', 'description', 'fileUrl', 'dateCreated', 'userCreated { username }'];
 const FEEDBACK_PROJECTION = () => ['id', 'source', 'respondent', 'rating', 'comment', 'channel { id name }'];
 const TEMPLATE_PROJECTION = () => ['id', 'code', 'name', 'channelType', 'subject', 'body', 'isActive'];
