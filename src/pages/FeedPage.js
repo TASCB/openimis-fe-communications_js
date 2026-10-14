@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import { useIntl } from 'react-intl';
 import {
-  Paper, IconButton, Tooltip, CircularProgress, Grid, Button, Divider, Typography,
+  Paper, IconButton, Tooltip, CircularProgress, Grid, Button, Divider, Typography, Menu, MenuItem,
 } from '@material-ui/core';
 import VolumeUpOutlined from '@material-ui/icons/VolumeUpOutlined';
 import FlashOnOutlined from '@material-ui/icons/FlashOnOutlined';
@@ -14,7 +14,7 @@ import EmailOutlined from '@material-ui/icons/EmailOutlined';
 import FlagOutlined from '@material-ui/icons/FlagOutlined';
 import ScheduleOutlined from '@material-ui/icons/ScheduleOutlined';
 import EditOutlined from '@material-ui/icons/EditOutlined';
-import ArchiveOutlined from '@material-ui/icons/ArchiveOutlined';
+import MoreVert from '@material-ui/icons/MoreVert';
 import DeleteOutline from '@material-ui/icons/DeleteOutline';
 import SearchOutlined from '@material-ui/icons/SearchOutlined';
 import PeopleOutline from '@material-ui/icons/PeopleOutline';
@@ -25,7 +25,7 @@ import GetAppOutlined from '@material-ui/icons/GetAppOutlined';
 import Close from '@material-ui/icons/Close';
 import {
   Helmet, useTranslations, useModulesManager, useHistory, journalize, ProgressOrError,
-  formatMessageWithValues, baseApiUrl, TextInput,
+  formatMessageWithValues, baseApiUrl, TextInput, coreConfirm, clearConfirm,
 } from '@openimis/fe-core';
 import {
   MODULE_NAME, RIGHT_POST_MANAGE, RIGHT_POST_PUBLISH, COMMS_ROUTE_FEED,
@@ -49,6 +49,7 @@ const TYPE_ICONS = {
   NEWSLETTER: EmailOutlined,
 };
 const MAX_LEN = 1200;
+const FEED_LIMIT = 100;
 const STATE_LABELS = {
   published: 'communications.post.published',
   pending: 'communications.approval.status.pending',
@@ -183,6 +184,7 @@ const useStyles = makeStyles((theme) => {
     bodyClamp: { maxHeight: 132, overflow: 'hidden', maskImage: 'linear-gradient(#000 70%, transparent)', WebkitMaskImage: 'linear-gradient(#000 70%, transparent)' },
     cardFooter: { display: 'flex', alignItems: 'center', gap: 16, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${border}`, color: muted, fontSize: 13 },
     footerItem: { display: 'inline-flex', alignItems: 'center', gap: 6 },
+    menuIcon: { marginRight: 12, color: muted },
     delHover: { '&:hover': { color: '#c0392b', background: 'rgba(192,57,43,.08)' } },
 
     // ---- attachments (composer + card) ----
@@ -248,12 +250,13 @@ function AttachmentCard({
 
 function PostCard({ ctx, post }) {
   const {
-    classes, fm, fmv, canManage, canPublish, onPin, onEdit, onArchive, onDelete, onDeleteAttachment, onSubmitForApproval,
+    classes, fm, fmv, canManage, canPublish, onPin, onEdit, onDelete, onDeleteAttachment, onSubmitForApproval,
     focusUuid,
   } = ctx;
   const attachments = post.attachments || [];
   const focused = !!focusUuid && post.uuid === focusUuid;
   const [expanded, setExpanded] = useState(focused);
+  const [menuAnchor, setMenuAnchor] = useState(null);
   const Icon = TYPE_ICONS[post.postType] || TYPE_ICONS.ANNOUNCEMENT;
   const published = post.isPublished;
   const state = postState(post);
@@ -302,12 +305,27 @@ function PostCard({ ctx, post }) {
             <Tooltip title={fm('communications.action.edit')}>
               <IconButton size="small" aria-label={fm('communications.action.edit')} onClick={() => onEdit(post)}><EditOutlined fontSize="small" /></IconButton>
             </Tooltip>
-            <Tooltip title={fm('communications.action.archive')}>
-              <IconButton size="small" aria-label={fm('communications.action.archive')} onClick={() => onArchive(post)}><ArchiveOutlined fontSize="small" /></IconButton>
+            <Tooltip title={fm('communications.action.more')}>
+              <IconButton
+                size="small"
+                aria-label={fm('communications.action.more')}
+                aria-haspopup="true"
+                onClick={(e) => setMenuAnchor(e.currentTarget)}
+              >
+                <MoreVert fontSize="small" />
+              </IconButton>
             </Tooltip>
-            <Tooltip title={fm('communications.action.delete')}>
-              <IconButton size="small" className={classes.delHover} aria-label={fm('communications.action.delete')} onClick={() => onDelete(post)}><DeleteOutline fontSize="small" /></IconButton>
-            </Tooltip>
+            <Menu anchorEl={menuAnchor} keepMounted={false} open={!!menuAnchor} onClose={() => setMenuAnchor(null)}>
+              <MenuItem
+                onClick={() => {
+                  setMenuAnchor(null);
+                  onDelete(post);
+                }}
+              >
+                <DeleteOutline fontSize="small" className={classes.menuIcon} />
+                {fm('communications.action.delete')}
+              </MenuItem>
+            </Menu>
           </div>
         )}
       </div>
@@ -396,6 +414,8 @@ function FeedPage({ match }) {
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [pendingOnly, setPendingOnly] = useState(false);
+  const [toDelete, setToDelete] = useState(null);
+  const confirmed = useSelector((s) => s.core.confirmed);
   const prev = useRef();
   const fileInputRef = useRef(null);
   const titleRef = useRef(null);
@@ -405,7 +425,8 @@ function FeedPage({ match }) {
   const [singleView, setSingleView] = useState(false);
   const scrolledTo = useRef(null);
 
-  const refetch = () => dispatch(fetchPosts(modulesManager, ['first: 100']));
+  const refetch = () => dispatch(fetchPosts(modulesManager, [`first: ${FEED_LIMIT}`]));
+  const searchLabel = fmv('communications.filter.search', { count: FEED_LIMIT });
   useEffect(() => { refetch(); }, []);
   useEffect(() => {
     if (!focusUuid || fetching || !posts) return;
@@ -432,6 +453,19 @@ function FeedPage({ match }) {
     if (prev.current && !submitting) { dispatch(journalize(mutation)); refetch(); }
   }, [submitting]);
   useEffect(() => { prev.current = submitting; });
+  useEffect(() => {
+    if (toDelete) {
+      dispatch(coreConfirm(
+        fm('communications.post.deleteDialog.title'),
+        fmv('communications.post.deleteDialog.message', { title: toDelete.title }),
+      ));
+    }
+  }, [toDelete]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (toDelete && confirmed) dispatch(deletePost(toDelete, fm('communications.post.delete')));
+    if (confirmed !== null) setToDelete(null);
+    return () => confirmed !== null && dispatch(clearConfirm(false));
+  }, [confirmed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const intent = pending.current;
@@ -535,10 +569,9 @@ function FeedPage({ match }) {
     { id: p.id, title: p.title, body: p.body, postType: p.postType, isPinned: !p.isPinned },
     fm(p.isPinned ? 'communications.post.unpin.label' : 'communications.post.pin.label'),
   ));
-  const del = (p) => dispatch(deletePost(p, fm('communications.post.delete')));
+  const del = (p) => setToDelete(p);
   const delAttachment = (att) => dispatch(deletePostAttachment({ id: att.uuid }, fm('communications.attachment.delete')));
   const submitForApproval = (p) => dispatch(submitPostForApproval(p.id, fm('communications.post.submitForApproval')));
-  const archive = () => {};
 
   const counts = useMemo(() => {
     const list = posts || [];
@@ -561,7 +594,7 @@ function FeedPage({ match }) {
   const recent = visible.filter((p) => !p.isPinned);
 
   const cardCtx = {
-    classes, fm, fmv, canManage, canPublish, onPin: togglePin, onEdit: startEdit, onArchive: archive, onDelete: del, onDeleteAttachment: delAttachment, onSubmitForApproval: submitForApproval,
+    classes, fm, fmv, canManage, canPublish, onPin: togglePin, onEdit: startEdit, onDelete: del, onDeleteAttachment: delAttachment, onSubmitForApproval: submitForApproval,
     focusUuid,
   };
 
@@ -646,13 +679,15 @@ function FeedPage({ match }) {
                 ariaLabel={fm('communications.post.body')}
                 fm={fm}
               />
-              <div style={{ textAlign: 'right', marginTop: 6 }}>
-                <span className={`${classes.counter} ${bodyLen > MAX_LEN ? classes.counterOver : ''}`}>
-                  {bodyLen}
-                  {' / '}
-                  {MAX_LEN}
-                </span>
-              </div>
+              {bodyLen >= MAX_LEN * 0.8 && (
+                <div style={{ textAlign: 'right', marginTop: 6 }}>
+                  <span className={`${classes.counter} ${bodyLen > MAX_LEN ? classes.counterOver : ''}`}>
+                    {bodyLen}
+                    {' / '}
+                    {MAX_LEN}
+                  </span>
+                </div>
+              )}
             </Grid>
             <Grid item xs={12} className={classes.item}>
               <span className={classes.fieldCaption}>{fm('communications.composer.attachments')}</span>
@@ -733,7 +768,7 @@ function FeedPage({ match }) {
           <SearchOutlined style={{ fontSize: 18, color: '#5c6e64' }} />
           <input
             className={classes.searchInput} value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder={fm('communications.filter.search')} aria-label={fm('communications.filter.search')}
+            placeholder={searchLabel} aria-label={searchLabel}
           />
         </div>
       </div>
