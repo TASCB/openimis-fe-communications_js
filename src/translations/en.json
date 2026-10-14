@@ -45,6 +45,8 @@
   "communications.calendar.prev": "Previous",
   "communications.calendar.next": "Next",
   "communications.calendar.statusFilter": "Filter by status",
+  "communications.calendar.status": "Status",
+  "communications.calendar.allStatuses": "All statuses",
   "communications.calendar.dow.mon": "Mon",
   "communications.calendar.dow.tue": "Tue",
   "communications.calendar.dow.wed": "Wed",
