@@ -370,6 +370,7 @@
   "communications.stakeholderList.deleteDialog.message": "Delete the list \"{name}\"? Activities that already invited its members keep them.",
   "communications.stakeholderList.member.name": "Name",
   "communications.stakeholderList.member.organization": "Organisation",
+  "communications.stakeholderList.member.location": "Location",
   "communications.stakeholderList.member.phone": "Phone",
   "communications.stakeholderList.member.email": "Email",
   "communications.stakeholderList.member.add": "Add member",

@@ -365,7 +365,8 @@ export const deleteStakeholderList = (l, label) => libraryMutation('deleteStakeh
 export const saveStakeholderEntry = (e, label) => libraryMutation(
   e.id ? 'updateStakeholderEntry' : 'createStakeholderEntry',
   [str('id', e.id), str('stakeholderListId', decId(e.stakeholderListId)), str('name', e.name),
-    str('organization', e.organization), str('phone', e.phone), str('email', e.email)]
+    str('organization', e.organization), str('phone', e.phone), str('email', e.email),
+    raw('locationId', decId(e.locationId ?? e.location?.id))]
     .filter(Boolean).join('\n'),
   label,
 );

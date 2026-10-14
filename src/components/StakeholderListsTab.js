@@ -10,6 +10,7 @@ import DeleteOutlineIcon from '@material-ui/icons/DeleteOutline';
 import ArrowBack from '@material-ui/icons/ArrowBack';
 import {
   useTranslations, useModulesManager, useGraphqlQuery, journalize, TextInput, coreConfirm, clearConfirm,
+  graphqlWithVariables, PublishedComponent,
 } from '@openimis/fe-core';
 import {
   MODULE_NAME, RIGHT_STAKEHOLDER_CREATE, RIGHT_STAKEHOLDER_UPDATE, RIGHT_STAKEHOLDER_DELETE,
@@ -32,8 +33,36 @@ const BLANK_LIST = {
   id: null, code: '', name: '', description: '', isActive: true,
 };
 const BLANK_MEMBER = {
-  id: null, name: '', organization: '', phone: '', email: '',
+  id: null, name: '', organization: '', phone: '', email: '', location: null,
 };
+
+const MEMBERS_QUERY = `query CommStakeholderMembers($listId: ID, $after: String) {
+  stakeholderListEntry(stakeholderListId: $listId, first: 100, after: $after, orderBy: ["name"]) {
+    pageInfo { hasNextPage endCursor }
+    edges { node { id name organization phone email location { id code name } } }
+  }
+}`;
+
+function useAllMembers(listId) {
+  const dispatch = useDispatch();
+  const [state, setState] = useState({ members: [], isLoading: true });
+  const load = async () => {
+    setState((s) => ({ ...s, isLoading: true }));
+    const members = [];
+    let after = null;
+    do {
+      // eslint-disable-next-line no-await-in-loop
+      const action = await dispatch(graphqlWithVariables(MEMBERS_QUERY, { listId, after }, 'COMMS_STAKEHOLDER_MEMBERS'));
+      const page = action?.payload?.data?.stakeholderListEntry;
+      if (!page) break;
+      members.push(...page.edges.map((e) => e.node));
+      after = page.pageInfo?.hasNextPage ? page.pageInfo.endCursor : null;
+    } while (after);
+    setState({ members, isLoading: false });
+  };
+  useEffect(() => { load(); }, [listId]);
+  return { ...state, refetch: load };
+}
 
 function useMutationDone(onDone) {
   const dispatch = useDispatch();
@@ -64,13 +93,7 @@ function MembersPanel({ stakeholderList, onBack }) {
   const { formatMessage, formatMessageWithValues } = useTranslations(MODULE_NAME, modulesManager);
   const rights = useSelector((s) => s.core.user.i_user.rights ?? []);
   const [form, setForm] = useState(BLANK_MEMBER);
-  const { data, isLoading, refetch } = useGraphqlQuery(
-    `query CommStakeholderMembers($listId: ID) {
-      stakeholderListEntry(stakeholderListId: $listId, first: 100, orderBy: ["name"]) {
-        edges { node { id name organization phone email } }
-      }
-    }`, { listId: stakeholderList.id },
-  );
+  const { members, isLoading, refetch } = useAllMembers(stakeholderList.id);
   useMutationDone(refetch);
   const confirmDelete = useConfirmedDelete(
     formatMessage('communications.stakeholderList.member.deleteDialog.title'),
@@ -79,7 +102,6 @@ function MembersPanel({ stakeholderList, onBack }) {
   );
   const canEdit = rights.includes(form.id ? RIGHT_STAKEHOLDER_UPDATE : RIGHT_STAKEHOLDER_CREATE);
   const canDelete = rights.includes(RIGHT_STAKEHOLDER_DELETE);
-  const members = data?.stakeholderListEntry?.edges?.map((e) => e.node) ?? [];
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
   const save = () => {
     if (!form.name.trim()) return;
@@ -105,19 +127,22 @@ function MembersPanel({ stakeholderList, onBack }) {
                 {formatMessage(form.id ? 'communications.stakeholderList.member.editTitle' : 'communications.stakeholderList.member.add')}
               </Typography>
             </Grid>
-            <Grid item xs={12} md={3} className={classes.item}>
+            <Grid item xs={12} md={4} className={classes.item}>
               <TextInput module="communications" label="communications.stakeholderList.member.name" required
                 value={form.name} onChange={set('name')} />
             </Grid>
-            <Grid item xs={12} md={3} className={classes.item}>
+            <Grid item xs={12} md={4} className={classes.item}>
               <TextInput module="communications" label="communications.stakeholderList.member.organization"
                 value={form.organization} onChange={set('organization')} />
             </Grid>
-            <Grid item xs={6} md={3} className={classes.item}>
+            <Grid item xs={12} md={4} className={classes.item}>
+              <PublishedComponent pubRef="location.LocationPicker" value={form.location} onChange={set('location')} />
+            </Grid>
+            <Grid item xs={6} md={4} className={classes.item}>
               <TextInput module="communications" label="communications.stakeholderList.member.phone"
                 value={form.phone} onChange={set('phone')} />
             </Grid>
-            <Grid item xs={6} md={3} className={classes.item}>
+            <Grid item xs={6} md={4} className={classes.item}>
               <TextInput module="communications" label="communications.stakeholderList.member.email"
                 value={form.email} onChange={set('email')} />
             </Grid>
@@ -136,6 +161,7 @@ function MembersPanel({ stakeholderList, onBack }) {
           <TableRow>
             <TableCell>{formatMessage('communications.stakeholderList.member.name')}</TableCell>
             <TableCell>{formatMessage('communications.stakeholderList.member.organization')}</TableCell>
+            <TableCell>{formatMessage('communications.stakeholderList.member.location')}</TableCell>
             <TableCell>{formatMessage('communications.stakeholderList.member.phone')}</TableCell>
             <TableCell>{formatMessage('communications.stakeholderList.member.email')}</TableCell>
             <TableCell />
@@ -144,13 +170,14 @@ function MembersPanel({ stakeholderList, onBack }) {
         <TableBody>
           {!isLoading && !members.length && (
             <TableRow>
-              <TableCell colSpan={5} className={classes.empty}>{formatMessage('communications.stakeholderList.member.empty')}</TableCell>
+              <TableCell colSpan={6} className={classes.empty}>{formatMessage('communications.stakeholderList.member.empty')}</TableCell>
             </TableRow>
           )}
           {members.map((m) => (
             <TableRow key={m.id} selected={form.id === m.id}>
               <TableCell>{m.name}</TableCell>
               <TableCell>{m.organization}</TableCell>
+              <TableCell>{m.location?.name}</TableCell>
               <TableCell>{m.phone}</TableCell>
               <TableCell>{m.email}</TableCell>
               <TableCell align="right" className={classes.rowActions}>
