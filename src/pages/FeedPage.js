@@ -42,13 +42,25 @@ import { htmlToText } from '../components/htmlSanitize';
 import { parseDate, relTime } from '../utils/dates';
 
 const TYPES = ['ANNOUNCEMENT', 'UPDATE', 'MEDIA_HIGHLIGHT', 'NEWSLETTER'];
-const TYPE_META = {
-  ANNOUNCEMENT: { color: '#006273', Icon: VolumeUpOutlined },
-  UPDATE: { color: '#b7791f', Icon: FlashOnOutlined },
-  MEDIA_HIGHLIGHT: { color: '#4f46e5', Icon: PermMediaOutlined },
-  NEWSLETTER: { color: '#475569', Icon: EmailOutlined },
+const TYPE_ICONS = {
+  ANNOUNCEMENT: VolumeUpOutlined,
+  UPDATE: FlashOnOutlined,
+  MEDIA_HIGHLIGHT: PermMediaOutlined,
+  NEWSLETTER: EmailOutlined,
 };
 const MAX_LEN = 1200;
+const STATE_LABELS = {
+  published: 'communications.post.published',
+  pending: 'communications.approval.status.pending',
+  rejected: 'communications.approval.status.rejected',
+  draft: 'communications.post.draft',
+};
+function postState(p) {
+  if (p.isPublished) return 'published';
+  if (p.approvalStatus === 'PENDING') return 'pending';
+  if (p.approvalStatus === 'REJECTED') return 'rejected';
+  return 'draft';
+}
 const postAttachmentUrl = (att, inline) => `${baseApiUrl}/communications/post-attachments/${att.uuid}/download/${inline ? '?inline=1' : ''}`;
 
 function formatBytes(n) {
@@ -62,15 +74,15 @@ function formatBytes(n) {
 function fileKind(name, type) {
   const ext = (name || '').split('.').pop().toLowerCase();
   const t = (type || '').toLowerCase();
-  if (t.includes('pdf') || ext === 'pdf') return { label: 'PDF', color: '#d64545' };
-  if (t.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'].includes(ext)) return { label: 'IMG', color: '#0d9488' };
-  if (t.includes('sheet') || t.includes('excel') || ['xls', 'xlsx', 'csv'].includes(ext)) return { label: 'XLS', color: '#217346' };
-  if (t.includes('word') || ['doc', 'docx'].includes(ext)) return { label: 'DOC', color: '#2b579a' };
-  if (t.includes('presentation') || ['ppt', 'pptx'].includes(ext)) return { label: 'PPT', color: '#c43e1c' };
-  if (['zip', 'rar', '7z', 'gz'].includes(ext)) return { label: 'ZIP', color: '#8a6d3b' };
-  return { label: (ext || 'FILE').slice(0, 4).toUpperCase(), color: '#5c6e64' };
+  if (t.includes('pdf') || ext === 'pdf') return 'PDF';
+  if (t.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'].includes(ext)) return 'IMG';
+  if (t.includes('sheet') || t.includes('excel') || ['xls', 'xlsx', 'csv'].includes(ext)) return 'XLS';
+  if (t.includes('word') || ['doc', 'docx'].includes(ext)) return 'DOC';
+  if (t.includes('presentation') || ['ppt', 'pptx'].includes(ext)) return 'PPT';
+  if (['zip', 'rar', '7z', 'gz'].includes(ext)) return 'ZIP';
+  return (ext || 'FILE').slice(0, 4).toUpperCase();
 }
-const isImage = (att) => fileKind(att.fileName, att.fileType).label === 'IMG'
+const isImage = (att) => fileKind(att.fileName, att.fileType) === 'IMG'
   || (att.fileType || '').toLowerCase().includes('pdf');
 
 const useStyles = makeStyles((theme) => {
@@ -92,10 +104,7 @@ const useStyles = makeStyles((theme) => {
     eyebrow: { color: teal, fontWeight: 700, fontSize: 12, letterSpacing: 1.2, textTransform: 'uppercase' },
     h1: { fontSize: 30, fontWeight: 800, color: ink, margin: '4px 0 4px', lineHeight: 1.1 },
     subtitle: { color: muted, fontSize: 14.5, margin: 0 },
-    pill: {
-      alignSelf: 'center', background: '#fff', border: `1px solid ${border}`, borderRadius: 999,
-      padding: '8px 16px', fontSize: 13.5, fontWeight: 700, color: ink, whiteSpace: 'nowrap',
-    },
+    headerAction: { alignSelf: 'center' },
 
     composerPrompt: {
       flex: 1, textAlign: 'left', background: 'none', border: 0, borderBottom: '1px solid rgba(0,0,0,.42)',
@@ -145,11 +154,19 @@ const useStyles = makeStyles((theme) => {
       padding: '10px 16px', borderRadius: 10, background: '#eef5f2', border: `1px solid ${border}`, fontSize: 13.5, color: ink,
     },
     cardTop: { display: 'flex', alignItems: 'flex-start', gap: 12 },
-    typeIcon: { width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    typeIcon: {
+      width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      background: `${teal}14`, color: teal,
+    },
+    pinActive: { color: teal },
     cardMain: { flex: 1, minWidth: 0 },
     titleRow: { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
     cardTitle: { fontSize: 17, fontWeight: 800, color: ink, margin: 0 },
     badge: { fontSize: 11, fontWeight: 800, borderRadius: 6, padding: '2px 8px', letterSpacing: 0.3 },
+    badge_published: { color: '#1b5e20', background: '#e3f4e6' },
+    badge_pending: { color: '#8a5a00', background: '#fef3c7' },
+    badge_rejected: { color: theme.palette.error.main, background: '#fdecea' },
+    badge_draft: { color: muted, background: '#eef1ef' },
     pinnedBadge: { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 800, color: teal, background: `${teal}14`, borderRadius: 6, padding: '2px 8px' },
     metaLine: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', color: muted, fontSize: 13, margin: '6px 0 0' },
     typeTag: { fontWeight: 800, color: ink },
@@ -179,8 +196,13 @@ const useStyles = makeStyles((theme) => {
     },
     attachBadge: {
       flexShrink: 0, width: 34, height: 34, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: '#fff', fontSize: 10, fontWeight: 900, letterSpacing: 0.3,
+      background: `${teal}14`, color: teal, fontSize: 10, fontWeight: 900, letterSpacing: 0.3,
     },
+    rejection: {
+      marginTop: 12, padding: 12, borderRadius: 4, border: `1px solid ${border}`, background: '#fafafa',
+    },
+    rejectionLabel: { color: theme.palette.error.main, fontWeight: 700, fontSize: 13, marginBottom: 4 },
+    rejectionText: { color: ink, fontSize: 14, lineHeight: 1.5 },
     attachInfo: { minWidth: 0, flex: 1 },
     attachName: { fontWeight: 700, color: ink, fontSize: 13.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     attachSub: { color: muted, fontSize: 11.5, marginTop: 1, textTransform: 'uppercase', letterSpacing: 0.3 },
@@ -192,10 +214,10 @@ function AttachmentCard({
   classes, fm, att, onDelete,
 }) {
   const kind = fileKind(att.fileName, att.fileType);
-  const sub = [formatBytes(att.fileSize), kind.label].filter(Boolean).join(' · ');
+  const sub = [formatBytes(att.fileSize), kind].filter(Boolean).join(' · ');
   return (
     <div className={classes.attachCard}>
-      <span className={classes.attachBadge} style={{ background: kind.color }}>{kind.label}</span>
+      <span className={classes.attachBadge}>{kind}</span>
       <div className={classes.attachInfo}>
         <div className={classes.attachName} title={att.fileName}>{att.fileName}</div>
         <div className={classes.attachSub}>{sub}</div>
@@ -233,15 +255,15 @@ function PostCard({ ctx, post }) {
   const attachments = post.attachments || [];
   const focused = !!focusUuid && post.uuid === focusUuid;
   const [expanded, setExpanded] = useState(focused);
-  const meta = TYPE_META[post.postType] || TYPE_META.ANNOUNCEMENT;
-  const { Icon } = meta;
+  const Icon = TYPE_ICONS[post.postType] || TYPE_ICONS.ANNOUNCEMENT;
   const published = post.isPublished;
+  const state = postState(post);
   const long = htmlToText(post.body).length > 260 || /<(img|h2|h3|ul|ol)[\s>]/i.test(post.body || '');
 
   return (
     <Paper elevation={0} id={`post-${post.uuid}`} className={`${classes.card} ${focused ? classes.cardFocused : ''}`}>
       <div className={classes.cardTop}>
-        <span className={classes.typeIcon} style={{ background: `${meta.color}14`, color: meta.color }}>
+        <span className={classes.typeIcon}>
           <Icon style={{ fontSize: 20 }} />
         </span>
         <div className={classes.cardMain}>
@@ -250,12 +272,9 @@ function PostCard({ ctx, post }) {
             {post.isPinned && (
               <span className={classes.pinnedBadge}><FlagOutlined style={{ fontSize: 13 }} />{fm('communications.post.pinnedBadge')}</span>
             )}
-            <Tooltip title={published ? '' : fm('communications.post.pendingApproval')}>
-              <span
-                className={classes.badge}
-                style={published ? { color: '#1b5e20', background: '#e3f4e6' } : { color: '#d8941e', background: '#fef3c7' }}
-              >
-                {fm(published ? 'communications.post.published' : 'communications.approval.status.pending')}
+            <Tooltip title={state === 'pending' ? fm('communications.post.pendingApproval') : ''}>
+              <span className={`${classes.badge} ${classes[`badge_${state}`]}`}>
+                {fm(STATE_LABELS[state])}
               </span>
             </Tooltip>
           </div>
@@ -275,7 +294,7 @@ function PostCard({ ctx, post }) {
                   size="small"
                   aria-label={fm(post.isPinned ? 'communications.action.unpin' : 'communications.action.pin')}
                   onClick={() => onPin(post)}
-                  style={post.isPinned ? { color: TYPE_META.ANNOUNCEMENT.color } : undefined}
+                  className={post.isPinned ? classes.pinActive : undefined}
                 >
                   <FlagOutlined fontSize="small" />
                 </IconButton>
@@ -295,11 +314,11 @@ function PostCard({ ctx, post }) {
       </div>
 
       {post.rejectionReason && (
-        <div style={{ marginTop: 12, padding: 12, backgroundColor: '#fde2e2', border: '1px solid #fca5a5', borderRadius: 8 }}>
-          <div style={{ color: '#dc2626', fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
+        <div className={classes.rejection}>
+          <div className={classes.rejectionLabel}>
             {fm('communications.post.rejectionReason')}
           </div>
-          <div style={{ color: '#991b1b', fontSize: 14, lineHeight: 1.5 }}>
+          <div className={classes.rejectionText}>
             {post.rejectionReason}
           </div>
         </div>
@@ -377,6 +396,7 @@ function FeedPage({ match }) {
   const [templateUndo, setTemplateUndo] = useState(null);
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const [pendingOnly, setPendingOnly] = useState(false);
   const prev = useRef();
   const fileInputRef = useRef(null);
   const titleRef = useRef(null);
@@ -527,17 +547,17 @@ function FeedPage({ match }) {
     TYPES.forEach((t) => { c[t] = list.filter((p) => p.postType === t).length; });
     return c;
   }, [posts]);
-  const published = (posts || []).filter((p) => p.isPublished).length;
-  const drafts = (posts || []).filter((p) => !p.isPublished).length;
+  const awaiting = (posts || []).filter((p) => postState(p) === 'pending').length;
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (posts || []).filter((p) => {
       if (filter !== 'ALL' && p.postType !== filter) return false;
+      if (pendingOnly && postState(p) !== 'pending') return false;
       if (q && !(`${p.title} ${htmlToText(p.body)}`.toLowerCase().includes(q))) return false;
       return true;
     });
-  }, [posts, filter, search]);
+  }, [posts, filter, search, pendingOnly]);
   const pinned = visible.filter((p) => p.isPinned);
   const recent = visible.filter((p) => !p.isPinned);
 
@@ -558,7 +578,17 @@ function FeedPage({ match }) {
           <h1 className={classes.h1}>{fm('communications.feed.page.title')}</h1>
           <p className={classes.subtitle}>{fm('communications.feed.subtitle')}</p>
         </div>
-        <span className={classes.pill}>{fmv('communications.feed.counts', { published, draft: drafts })}</span>
+        {(awaiting > 0 || pendingOnly) && (
+          <Button
+            className={classes.headerAction}
+            color="primary"
+            variant={pendingOnly ? 'contained' : 'outlined'}
+            onClick={() => setPendingOnly((v) => !v)}
+            aria-pressed={pendingOnly}
+          >
+            {fmv('communications.feed.awaitingApproval', { count: awaiting })}
+          </Button>
+        )}
       </div>
 
       {canManage && !open && (
@@ -641,10 +671,10 @@ function FeedPage({ match }) {
                     const kind = fileKind(f.name, f.type);
                     return (
                       <div className={classes.attachCard} key={`${f.name}-${idx}`}>
-                        <span className={classes.attachBadge} style={{ background: kind.color }}>{kind.label}</span>
+                        <span className={classes.attachBadge}>{kind}</span>
                         <div className={classes.attachInfo}>
                           <div className={classes.attachName} title={f.name}>{f.name}</div>
-                          <div className={classes.attachSub}>{[formatBytes(f.size), kind.label].filter(Boolean).join(' · ')}</div>
+                          <div className={classes.attachSub}>{[formatBytes(f.size), kind].filter(Boolean).join(' · ')}</div>
                         </div>
                         <div className={classes.attachActions}>
                           <Tooltip title={fm('communications.attachment.remove')}>

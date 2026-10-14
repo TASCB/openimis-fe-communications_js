@@ -56,7 +56,7 @@ const JOURNALIST_PROJECTION = () => [
 ];
 const POST_ATTACHMENT_PROJECTION = () => ['id', 'uuid', 'fileName', 'fileType', 'fileSize', 'description', 'dateCreated', 'userCreated { username }'];
 const POST_PROJECTION = () => [
-  'id', 'uuid', 'title', 'body', 'postType', 'isPublished', 'isPinned', 'publishedAt',
+  'id', 'uuid', 'title', 'body', 'postType', 'isPublished', 'isPinned', 'publishedAt', 'approvalStatus', 'rejectionReason',
   'dateCreated', 'userCreated { username }', 'activity { id code title }',
   `attachments { ${POST_ATTACHMENT_PROJECTION().join(' ')} }`,
 ];
