@@ -178,7 +178,7 @@ const useStyles = makeStyles((theme) => {
     dot: { color: '#c3cec8' },
     actions: { display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 },
     body: {
-      color: '#25322c', fontSize: 14.5, lineHeight: 1.6, margin: '12px 0 0',
+      color: '#25322c', fontSize: 14.5, lineHeight: 1.6, margin: '12px 0 0', maxWidth: 760,
       '& p': { margin: '0 0 8px' },
       '& h2': { fontSize: 19, fontWeight: 800, margin: '4px 0 8px' },
       '& h3': { fontSize: 16.5, fontWeight: 800, margin: '4px 0 8px' },
