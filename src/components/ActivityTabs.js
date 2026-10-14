@@ -47,10 +47,10 @@ function ActivityTabs({ activityId, readOnly, edited }) {
     { key: 'audience', label: 'communications.tab.audience', ro: !rights.includes(RIGHT_AUDIENCE_MANAGE), render: (ro) => <AudiencePanel activityId={activityId} readOnly={ro} /> },
     ...(rights.includes(RIGHT_PARTICIPANT_SEARCH) ? [{ key: 'participants', label: 'communications.tab.participants', ownReadOnly: true, ro: participantsReadOnly, render: (ro) => <ParticipantsPanel activityId={activityId} readOnly={ro} /> }] : []),
     ...(rights.includes(RIGHT_MEDIA_HOUSE_SEARCH) ? [{ key: 'media', label: 'communications.tab.media', ownReadOnly: true, ro: coverageReadOnly, render: (ro) => <MediaPanel activityId={activityId} readOnly={ro} /> }] : []),
-    { key: 'assignments', label: 'communications.tab.assignments', ro: !rights.includes(RIGHT_ASSIGNMENT_MANAGE), render: (ro) => <AssignmentsPanel activityId={activityId} readOnly={ro} /> },
+    { key: 'assignments', label: 'communications.tab.assignments', ro: !rights.includes(RIGHT_ASSIGNMENT_MANAGE), render: (ro) => <AssignmentsPanel activityId={activityId} edited={edited} readOnly={ro} /> },
     ...(rights.includes(RIGHT_ATTACHMENT_SEARCH) ? [{ key: 'attachments', label: 'communications.tab.attachments', ro: false, render: (ro) => <AttachmentsPanel activityId={activityId} readOnly={ro} /> }] : []),
     { key: 'feedback', label: 'communications.tab.feedback', ro: !rights.includes(RIGHT_FEEDBACK_MANAGE), render: (ro) => <FeedbackPanel activityId={activityId} readOnly={ro} /> },
-  ], [activityId, rights, coverageReadOnly, participantsReadOnly]);
+  ], [activityId, edited, rights, coverageReadOnly, participantsReadOnly]);
 
   const [active, setActive] = useState(0);
   const index = Math.min(active, tabs.length - 1);
