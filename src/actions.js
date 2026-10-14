@@ -190,6 +190,13 @@ const childDelete = (deleteName, item, label) => {
     { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: deleteName, requestedDateTime: new Date() });
 };
 
+export function addParticipantsFromList(activityId, stakeholderListId, label) {
+  const m = formatMutation('addActivityParticipantsFromList',
+    [str('activityId', decId(activityId)), str('stakeholderListId', decId(stakeholderListId))].join('\n'), label);
+  return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_CHILD, {
+    clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'addActivityParticipantsFromList', requestedDateTime: new Date(),
+  });
+}
 export const fetchParticipants = (id) => childFetch('activityParticipant', PARTICIPANT_PROJECTION, ACTION_TYPE.SEARCH_PARTICIPANTS, id);
 export const saveParticipant = (o, label) => childSave('createActivityParticipant', 'updateActivityParticipant', (p) => [
   str('id', p?.id),
@@ -343,6 +350,26 @@ export function deleteTemplate(t, label) {
   return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_LIBRARY,
     { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'deleteCommunicationTemplate', requestedDateTime: new Date() });
 }
+const libraryMutation = (serviceName, gql, label) => {
+  const m = formatMutation(serviceName, gql, label);
+  return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_LIBRARY,
+    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName, requestedDateTime: new Date() });
+};
+export const saveStakeholderList = (l, label) => libraryMutation(
+  l.id ? 'updateStakeholderList' : 'createStakeholderList',
+  [str('id', l.id), str('code', l.code), str('name', l.name), str('description', l.description), raw('isActive', l.isActive)]
+    .filter(Boolean).join('\n'),
+  label,
+);
+export const deleteStakeholderList = (l, label) => libraryMutation('deleteStakeholderList', list('ids', [l.id]), label);
+export const saveStakeholderEntry = (e, label) => libraryMutation(
+  e.id ? 'updateStakeholderEntry' : 'createStakeholderEntry',
+  [str('id', e.id), str('stakeholderListId', decId(e.stakeholderListId)), str('name', e.name),
+    str('organization', e.organization), str('phone', e.phone), str('email', e.email)]
+    .filter(Boolean).join('\n'),
+  label,
+);
+export const deleteStakeholderEntry = (e, label) => libraryMutation('deleteStakeholderEntry', list('ids', [e.id]), label);
 export function fetchLibraryAssets(modulesManager, params) {
   return graphql(formatPageQueryWithCount('libraryAsset', params, LIBRARY_PROJECTION()),
     ACTION_TYPE.SEARCH_LIBRARY_ASSETS, { gqlField: 'libraryAsset' });

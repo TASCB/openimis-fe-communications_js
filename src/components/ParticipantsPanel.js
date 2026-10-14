@@ -10,10 +10,13 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import {
   useModulesManager, useTranslations, journalize, PublishedComponent, TextInput, coreConfirm, clearConfirm,
 } from '@openimis/fe-core';
-import { fetchParticipants, saveParticipant, deleteParticipant } from '../actions';
+import {
+  fetchParticipants, saveParticipant, deleteParticipant, addParticipantsFromList,
+} from '../actions';
 import StakeholderTypePicker from '../pickers/StakeholderTypePicker';
+import StakeholderListPicker from '../pickers/StakeholderListPicker';
 import { GenderPicker, AttendanceStatusPicker } from '../pickers/ConstantPickers';
-import { GENDER_LIST } from '../constants';
+import { GENDER_LIST, RIGHT_STAKEHOLDER_SEARCH } from '../constants';
 
 const useStyles = makeStyles((theme) => ({
   form: { padding: theme.spacing(1, 0) },
@@ -38,14 +41,16 @@ const BLANK = {
 };
 
 function ParticipantsPanel({
-  activityId, readOnly, participants, submittingMutation, mutation, confirmed,
-  fetchParticipants, saveParticipant, deleteParticipant, journalize, coreConfirm, clearConfirm,
+  activityId, readOnly, participants, submittingMutation, mutation, confirmed, rights,
+  fetchParticipants, saveParticipant, deleteParticipant, addParticipantsFromList, journalize, coreConfirm, clearConfirm,
 }) {
   const classes = useStyles();
   const modulesManager = useModulesManager();
   const { formatMessage, formatMessageWithValues } = useTranslations('communications', modulesManager);
   const [row, setRow] = useState(BLANK);
   const [toDelete, setToDelete] = useState(null);
+  const [fromList, setFromList] = useState(null);
+  const canUseLists = (rights ?? []).includes(RIGHT_STAKEHOLDER_SEARCH);
   const prev = useRef();
 
   useEffect(() => { if (activityId) fetchParticipants(activityId); }, [activityId]);
@@ -101,6 +106,11 @@ function ParticipantsPanel({
   });
 
   const items = participants ?? [];
+  const importList = () => {
+    addParticipantsFromList(activityId, fromList.id,
+      formatMessageWithValues('communications.participant.inviteListLabel', { name: fromList.name }));
+    setFromList(null);
+  };
   const attended = items.filter((p) => p.attendanceStatus === 'ATTENDED').length;
 
   return (
@@ -157,6 +167,24 @@ function ParticipantsPanel({
             </Grid>
           </Grid>
           <Divider />
+          {canUseLists && (
+            <>
+              <Grid container className={classes.form} alignItems="center">
+                <Grid item xs={12} className={classes.item}>
+                  <Typography className={classes.formTitle}>{formatMessage('communications.participant.fromList')}</Typography>
+                </Grid>
+                <Grid item xs={12} md={6} className={classes.item}>
+                  <StakeholderListPicker withLabel value={fromList} onChange={(v) => setFromList(v)} />
+                </Grid>
+                <Grid item xs={12} md={6} className={`${classes.item} ${classes.actions}`}>
+                  <Button variant="outlined" color="primary" disabled={!fromList} onClick={importList}>
+                    {formatMessage('communications.participant.inviteList')}
+                  </Button>
+                </Grid>
+              </Grid>
+              <Divider />
+            </>
+          )}
         </>
       )}
       <Box px={1} pt={1}>
@@ -213,10 +241,11 @@ function ParticipantsPanel({
 const mapState = (s) => ({
   participants: s.communications.participants,
   submittingMutation: s.communications.submittingMutation,
+  rights: s.core.user?.i_user?.rights,
   mutation: s.communications.mutation,
   confirmed: s.core.confirmed,
 });
 const mapDispatch = (d) => bindActionCreators({
-  fetchParticipants, saveParticipant, deleteParticipant, journalize, coreConfirm, clearConfirm,
+  fetchParticipants, saveParticipant, deleteParticipant, addParticipantsFromList, journalize, coreConfirm, clearConfirm,
 }, d);
 export default connect(mapState, mapDispatch)(ParticipantsPanel);

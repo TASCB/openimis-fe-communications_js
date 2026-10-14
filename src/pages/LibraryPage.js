@@ -13,7 +13,7 @@ import {
 } from '@openimis/fe-core';
 import { UploadBar } from '@openimis/fe-tasaf_common';
 import {
-  MODULE_NAME, RIGHT_TEMPLATE_MANAGE, RIGHT_LIBRARY_UPLOAD,
+  MODULE_NAME, RIGHT_TEMPLATE_MANAGE, RIGHT_LIBRARY_UPLOAD, RIGHT_STAKEHOLDER_SEARCH,
 } from '../constants';
 import {
   fetchTemplates, saveTemplate, deleteTemplate,
@@ -21,6 +21,7 @@ import {
 } from '../actions';
 import { ChannelTypePicker, AssetTypePicker } from '../pickers/ConstantPickers';
 import RichTextEditor from '../components/RichTextEditor';
+import StakeholderListsTab from '../components/StakeholderListsTab';
 
 const useStyles = makeStyles((theme) => ({
   page: theme.page,
@@ -329,11 +330,14 @@ function LibraryPage() {
   const classes = useStyles();
   const modulesManager = useModulesManager();
   const { formatMessage } = useTranslations(MODULE_NAME, modulesManager);
+  const rights = useSelector((s) => s.core.user.i_user.rights ?? []);
   const [active, setActive] = useState(0);
   const tabs = [
     { key: 'templates', label: 'communications.library.templates', render: () => <TemplatesTab /> },
+    rights.includes(RIGHT_STAKEHOLDER_SEARCH)
+      && { key: 'stakeholders', label: 'communications.library.stakeholderLists', render: () => <StakeholderListsTab /> },
     { key: 'assets', label: 'communications.library.assets', render: () => <AssetsTab /> },
-  ];
+  ].filter(Boolean);
   return (
     <div className={classes.page}>
       <Helmet title={formatMessage('communications.library.page.title')} />
