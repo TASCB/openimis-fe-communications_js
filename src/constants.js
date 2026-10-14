@@ -76,22 +76,7 @@ export const ACTIVITY_STATUS = {
 };
 export const ACTIVITY_STATUS_LIST = Object.values(ACTIVITY_STATUS);
 
-// Status badge = one neutral grey (openIMIS convention). STATUS_COLORS stays per-status for
-// the CALENDAR, where colour is the only differentiator.
 export const STATUS_CHIP_COLOR = '#9e9e9e';
-
-export const STATUS_COLORS = {
-  DRAFT: '#9e9e9e',
-  SUBMITTED: '#1976d2',
-  APPROVED: '#0288d1',
-  REJECTED: '#d32f2f',
-  SCHEDULED: '#7b1fa2',
-  ONGOING: '#ed6c02',
-  COMPLETED: '#2e7d32',
-  CLOSED: '#455a64',
-  ARCHIVED: '#5d4037',
-  CANCELLED: '#c62828',
-};
 
 export const ACTIVITY_TYPE_LIST = [
   'BRANDING', 'EVENT', 'INTERNAL_COMMUNICATION', 'PUBLICATION', 'SOCIAL_MEDIA',
@@ -101,8 +86,6 @@ export const ACTIVITY_TYPE_LIST = [
   'COMMUNITY_AWARENESS', 'STAKEHOLDER_BRIEFING',
   'OTHER',
 ];
-// An event is activity_type=EVENT; EVENT_TYPE_LIST is its sub-type (client's Public/Internal/CSR),
-// not a parallel format axis.
 export const ACTIVITY_TYPE_EVENT = 'EVENT';
 export const EVENT_TYPE_LIST = ['PUBLIC', 'INTERNAL', 'CSR'];
 export const EVENT_DEFAULT_TYPE = 'EVENT';

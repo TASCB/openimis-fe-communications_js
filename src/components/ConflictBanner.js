@@ -3,15 +3,17 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { Grid } from '@material-ui/core';
 import _debounce from 'lodash/debounce';
-import { WarningBox, useModulesManager, useTranslations } from '@openimis/fe-core';
+import { useModulesManager, useTranslations, useHistory } from '@openimis/fe-core';
+import { ConflictPanel } from '@openimis/fe-tasaf_common';
 import { fetchConflicts, clearConflicts, decId } from '../actions';
-import { DEFAULT_DEBOUNCE_TIME } from '../constants';
+import { DEFAULT_DEBOUNCE_TIME, COMMS_ROUTE_ACTIVITY } from '../constants';
 import { toISO } from '../utils/dates';
 
 function ConflictBanner({
   edited, conflicts, assignments, fetchConflicts, clearConflicts,
 }) {
   const modulesManager = useModulesManager();
+  const history = useHistory();
   const { formatMessage } = useTranslations('communications', modulesManager);
   const staffUserIds = useMemo(
     () => (assignments ?? []).map((a) => decId(a.staffUser?.id)).filter(Boolean),
@@ -32,18 +34,18 @@ function ConflictBanner({
     }
   }, [edited?.startDatetime, edited?.endDatetime, edited?.locationId, staffUserIds.length]);
 
-  const hard = (conflicts ?? []).filter((c) => c.hard);
-  const soft = (conflicts ?? []).filter((c) => !c.hard);
-  if (!hard.length && !soft.length) return null;
-  const HARD = { backgroundColor: '#fdecea', borderLeft: '5px solid #c62828' };
+  if (!(conflicts ?? []).length) return null;
   return (
     <Grid container>
-      {hard.length > 0 && (
-        <WarningBox title={formatMessage('communications.conflict.hardTitle')} description={hard.map((c) => c.message).join('  •  ')} styles={HARD} />
-      )}
-      {soft.length > 0 && (
-        <WarningBox title={formatMessage('communications.conflict.softTitle')} description={soft.map((c) => c.message).join('  •  ')} />
-      )}
+      <ConflictPanel
+        conflicts={conflicts}
+        hardTitle={formatMessage('communications.conflict.hardTitle')}
+        softTitle={formatMessage('communications.conflict.softTitle')}
+        viewLabel={formatMessage('communications.conflict.open')}
+        hrefFor={(c) => (c.conflictingActivityId
+          ? history.createHref({ pathname: `/${modulesManager.getRef(COMMS_ROUTE_ACTIVITY)}/${c.conflictingActivityId}` })
+          : null)}
+      />
     </Grid>
   );
 }

@@ -32,7 +32,6 @@ function ActivityProfileCard({ activity, hideOutcome = false }) {
       <div className={classes.header}>
         <Avatar className={classes.avatar}><Campaign fontSize="large" /></Avatar>
         <div style={{ flexGrow: 1, minWidth: 0 }}>
-          <Typography className={classes.code}>{a.code}</Typography>
           <Typography variant="h5" className={classes.title}>{a.title}</Typography>
           {typeLabel && <Typography className={classes.sub}>{typeLabel}</Typography>}
         </div>
@@ -47,8 +46,6 @@ function ActivityProfileCard({ activity, hideOutcome = false }) {
           <ProfileTile md={4} icon={<Public />} label={formatMessage('communications.virtualPlatform')} value={a.virtualPlatform} />
           <ProfileTile md={4} icon={<LocationOn />} label={formatMessage('communications.location')} value={a.location?.name} />
           <ProfileTile md={4} icon={<People />} label={formatMessage('communications.plannedAudience')} value={a.plannedAudienceCount} />
-          {/* Outcome tiles are suppressed when the form renders a live Outcome section below,
-              so the same figure never appears twice — once static, once editable. */}
           {!hideOutcome && (
             <>
               <ProfileTile md={4} icon={<People />} label={formatMessage('communications.actualAudience')} value={a.actualAudienceCount} />

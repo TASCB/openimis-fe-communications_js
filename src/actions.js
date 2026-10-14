@@ -61,8 +61,7 @@ const POST_PROJECTION = () => [
   `attachments { ${POST_ATTACHMENT_PROJECTION().join(' ')} }`,
 ];
 
-// JSON.stringify emits a correctly-escaped GraphQL string literal (quotes, backslashes,
-// newlines). fe-core's formatGQLString double-escapes quotes (\\") and breaks rich-HTML bodies.
+// fe-core's formatGQLString double-escapes quotes and breaks rich-HTML bodies; JSON.stringify does not.
 const str = (k, v) => (v !== undefined && v !== null && v !== '' ? `${k}: ${JSON.stringify(String(v))}` : '');
 const raw = (k, v) => (v !== undefined && v !== null && v !== '' ? `${k}: ${v}` : '');
 const list = (k, v) => (Array.isArray(v) && v.length ? `${k}: [${v.map((x) => `"${x}"`).join(',')}]` : '');
@@ -153,13 +152,13 @@ export function fetchCategories(modulesManager, params = ['first: 100', 'isActiv
 export function fetchChannels(modulesManager, params = ['first: 100', 'isActive: true']) {
   return graphql(formatPageQueryWithCount('channel', params, ['id', 'code', 'name', 'channelType']), ACTION_TYPE.SEARCH_CHANNELS);
 }
-export function fetchStakeholderTypes(modulesManager, params = ['first: 200', 'isActive: true']) {
+export function fetchStakeholderTypes(modulesManager, params = ['first: 100', 'isActive: true']) {
   return graphql(formatPageQueryWithCount('stakeholderType', params, ['id', 'code', 'name', 'level']), ACTION_TYPE.SEARCH_STAKEHOLDER_TYPES);
 }
 
 // ---- generic child collections (per activity) -----------------------------
 const childFetch = (field, projection, type, activityId) => graphql(
-  formatPageQueryWithCount(field, [`activityId: "${encId('CommunicationActivityGQLType', activityId)}"`, 'first: 200'], projection()),
+  formatPageQueryWithCount(field, [`activityId: "${encId('CommunicationActivityGQLType', activityId)}"`, 'first: 100'], projection()),
   type,
 );
 const childSave = (createName, updateName, gql, obj, label) => {
@@ -404,7 +403,7 @@ export function fetchConflicts(variables) {
   return graphqlWithVariables(
     `query ($startDatetime: DateTime!, $endDatetime: DateTime!, $activityId: UUID, $locationId: Int, $staffUserIds: [UUID]) {
       activityConflicts(startDatetime: $startDatetime, endDatetime: $endDatetime, activityId: $activityId, locationId: $locationId, staffUserIds: $staffUserIds) {
-        type hard message conflictingActivityCode subjectLabel
+        type hard message conflictingActivityId conflictingActivityCode subjectLabel
       }
     }`, variables, ACTION_TYPE.GET_CONFLICTS,
   );
@@ -430,7 +429,7 @@ export function submitPostForApproval(postId, label) {
 }
 
 // ---- media-house / journalist registries -----------------------------------
-export function fetchMediaHouseCategories(modulesManager, params = ['first: 200', 'isActive: true']) {
+export function fetchMediaHouseCategories(modulesManager, params = ['first: 100', 'isActive: true']) {
   return graphql(formatPageQueryWithCount('mediaHouseCategory', params, MEDIA_HOUSE_CATEGORY_PROJECTION()),
     ACTION_TYPE.SEARCH_MEDIA_HOUSE_CATEGORIES, { gqlField: 'mediaHouseCategory' });
 }

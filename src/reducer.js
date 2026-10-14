@@ -185,7 +185,7 @@ function reducer(state = STORE_STATE, action) {
     case REQUEST(ACTION_TYPE.SEARCH_MEDIA_HOUSE_CATEGORIES):
     case SUCCESS(ACTION_TYPE.SEARCH_MEDIA_HOUSE_CATEGORIES):
     case ERROR(ACTION_TYPE.SEARCH_MEDIA_HOUSE_CATEGORIES):
-      return childReducer(state, action, action.type, 'mediaHouseCategory', 'mediaHouseCategories');
+      return childReducer(state, action, ACTION_TYPE.SEARCH_MEDIA_HOUSE_CATEGORIES, 'mediaHouseCategory', 'mediaHouseCategories');
 
     case REQUEST(ACTION_TYPE.GET_ACTIVITY):
       return {
@@ -207,47 +207,47 @@ function reducer(state = STORE_STATE, action) {
     case REQUEST(ACTION_TYPE.SEARCH_CATEGORIES):
     case SUCCESS(ACTION_TYPE.SEARCH_CATEGORIES):
     case ERROR(ACTION_TYPE.SEARCH_CATEGORIES):
-      return childReducer(state, action, action.type, 'activityCategory', 'categories');
+      return childReducer(state, action, ACTION_TYPE.SEARCH_CATEGORIES, 'activityCategory', 'categories');
     case REQUEST(ACTION_TYPE.SEARCH_CHANNELS):
     case SUCCESS(ACTION_TYPE.SEARCH_CHANNELS):
     case ERROR(ACTION_TYPE.SEARCH_CHANNELS):
-      return childReducer(state, action, action.type, 'channel', 'channels');
+      return childReducer(state, action, ACTION_TYPE.SEARCH_CHANNELS, 'channel', 'channels');
     case REQUEST(ACTION_TYPE.SEARCH_STAKEHOLDER_TYPES):
     case SUCCESS(ACTION_TYPE.SEARCH_STAKEHOLDER_TYPES):
     case ERROR(ACTION_TYPE.SEARCH_STAKEHOLDER_TYPES):
-      return childReducer(state, action, action.type, 'stakeholderType', 'stakeholderTypes');
+      return childReducer(state, action, ACTION_TYPE.SEARCH_STAKEHOLDER_TYPES, 'stakeholderType', 'stakeholderTypes');
     case REQUEST(ACTION_TYPE.SEARCH_PARTICIPANTS):
     case SUCCESS(ACTION_TYPE.SEARCH_PARTICIPANTS):
     case ERROR(ACTION_TYPE.SEARCH_PARTICIPANTS):
-      return childReducer(state, action, action.type, 'activityParticipant', 'participants');
+      return childReducer(state, action, ACTION_TYPE.SEARCH_PARTICIPANTS, 'activityParticipant', 'participants');
     case REQUEST(ACTION_TYPE.SEARCH_ACTIVITY_MEDIA_HOUSES):
     case SUCCESS(ACTION_TYPE.SEARCH_ACTIVITY_MEDIA_HOUSES):
     case ERROR(ACTION_TYPE.SEARCH_ACTIVITY_MEDIA_HOUSES):
-      return childReducer(state, action, action.type, 'activityMediaHouse', 'activityMediaHouses');
+      return childReducer(state, action, ACTION_TYPE.SEARCH_ACTIVITY_MEDIA_HOUSES, 'activityMediaHouse', 'activityMediaHouses');
     case REQUEST(ACTION_TYPE.SEARCH_ACTIVITY_CHANNELS):
     case SUCCESS(ACTION_TYPE.SEARCH_ACTIVITY_CHANNELS):
     case ERROR(ACTION_TYPE.SEARCH_ACTIVITY_CHANNELS):
-      return childReducer(state, action, action.type, 'activityChannel', 'activityChannels');
+      return childReducer(state, action, ACTION_TYPE.SEARCH_ACTIVITY_CHANNELS, 'activityChannel', 'activityChannels');
     case REQUEST(ACTION_TYPE.SEARCH_OBJECTIVES):
     case SUCCESS(ACTION_TYPE.SEARCH_OBJECTIVES):
     case ERROR(ACTION_TYPE.SEARCH_OBJECTIVES):
-      return childReducer(state, action, action.type, 'activityObjective', 'objectives');
+      return childReducer(state, action, ACTION_TYPE.SEARCH_OBJECTIVES, 'activityObjective', 'objectives');
     case REQUEST(ACTION_TYPE.SEARCH_AUDIENCES):
     case SUCCESS(ACTION_TYPE.SEARCH_AUDIENCES):
     case ERROR(ACTION_TYPE.SEARCH_AUDIENCES):
-      return childReducer(state, action, action.type, 'activityAudience', 'audiences');
+      return childReducer(state, action, ACTION_TYPE.SEARCH_AUDIENCES, 'activityAudience', 'audiences');
     case REQUEST(ACTION_TYPE.SEARCH_ASSIGNMENTS):
     case SUCCESS(ACTION_TYPE.SEARCH_ASSIGNMENTS):
     case ERROR(ACTION_TYPE.SEARCH_ASSIGNMENTS):
-      return childReducer(state, action, action.type, 'activityAssignment', 'assignments');
+      return childReducer(state, action, ACTION_TYPE.SEARCH_ASSIGNMENTS, 'activityAssignment', 'assignments');
     case REQUEST(ACTION_TYPE.SEARCH_ATTACHMENTS):
     case SUCCESS(ACTION_TYPE.SEARCH_ATTACHMENTS):
     case ERROR(ACTION_TYPE.SEARCH_ATTACHMENTS):
-      return childReducer(state, action, action.type, 'activityAttachment', 'attachments');
+      return childReducer(state, action, ACTION_TYPE.SEARCH_ATTACHMENTS, 'activityAttachment', 'attachments');
     case REQUEST(ACTION_TYPE.SEARCH_FEEDBACK):
     case SUCCESS(ACTION_TYPE.SEARCH_FEEDBACK):
     case ERROR(ACTION_TYPE.SEARCH_FEEDBACK):
-      return childReducer(state, action, action.type, 'activityFeedback', 'feedback');
+      return childReducer(state, action, ACTION_TYPE.SEARCH_FEEDBACK, 'activityFeedback', 'feedback');
 
     case REQUEST(ACTION_TYPE.GET_SUMMARY):
       return { ...state, fetchingSummary: true, errorSummary: null };

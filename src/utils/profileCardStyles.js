@@ -20,14 +20,8 @@ export const useProfileCardStyles = makeStyles((theme) => {
     avatar: {
       backgroundColor: 'rgba(255,255,255,0.25)', color: contrast, width: 56, height: 56, marginRight: theme.spacing(2),
     },
-    code: {
-      textTransform: 'uppercase', letterSpacing: 1, opacity: 0.85, fontSize: 12, fontWeight: 600,
-    },
     title: { fontWeight: 700, lineHeight: 1.15 },
     sub: { opacity: 0.9, fontSize: 13 },
-    headChips: {
-      display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: theme.spacing(0.5),
-    },
     chip: { backgroundColor: 'rgba(255,255,255,0.92)', color: main, fontWeight: 700 },
     body: { padding: theme.spacing(3) },
     tile: { display: 'flex', alignItems: 'flex-start' },
@@ -57,7 +51,6 @@ export const useProfileCardStyles = makeStyles((theme) => {
     },
     block: {
       backgroundColor: theme.palette.grey[50],
-      borderLeft: `4px solid ${main}`,
       borderRadius: 4,
       padding: theme.spacing(1.5, 2),
       whiteSpace: 'pre-wrap',
