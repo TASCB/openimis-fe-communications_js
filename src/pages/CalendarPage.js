@@ -45,7 +45,7 @@ function CalendarPage() {
           : null}
         sourceColors={CALENDAR_SOURCE_COLORS}
         ownSource="COMMUNICATIONS"
-        onCreate={rights.includes(RIGHT_ACTIVITY_CREATE) ? () => history.push(`/${detailRef}`) : null}
+        onCreate={rights.includes(RIGHT_ACTIVITY_CREATE) ? (date) => history.push(`/${detailRef}${date ? `?date=${date}` : ''}`) : null}
         title={formatMessage('communications.calendar.page.title')}
         subtitle={formatMessage('communications.calendar.subtitle')}
       />

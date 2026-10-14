@@ -25,6 +25,11 @@ const useStyles = makeStyles((theme) => ({ page: theme.page }));
 const SECONDARY_ACTIONS = ['reject', 'cancel', 'revise'];
 
 // One form, two variants: an event IS an activity. See the guide before splitting them.
+const dateFromQuery = (search) => {
+  const date = new URLSearchParams(search || '').get('date');
+  return date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? { startDatetime: date, endDatetime: date } : {};
+};
+
 function ActivityPage({ activityUuid, variant }) {
   const isEvent = variant === 'event';
   const classes = useStyles();
@@ -42,6 +47,7 @@ function ActivityPage({ activityUuid, variant }) {
     status: ACTIVITY_STATUS.DRAFT,
     activityType: isEvent ? EVENT_DEFAULT_TYPE : 'OTHER',
     ...(isEvent ? { eventType: 'PUBLIC' } : {}),
+    ...(activityUuid ? {} : dateFromQuery(history.location?.search)),
   });
   const [resetKey, setResetKey] = useState(0);
   const prev = useRef();
