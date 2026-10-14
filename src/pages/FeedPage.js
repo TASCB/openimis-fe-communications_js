@@ -101,7 +101,6 @@ const useStyles = makeStyles((theme) => {
 
     header: { display: 'flex', alignItems: 'flex-start', gap: 16, margin: '4px 0 20px', flexWrap: 'wrap' },
     headerText: { flex: 1, minWidth: 240 },
-    eyebrow: { color: teal, fontWeight: 700, fontSize: 12, letterSpacing: 1.2, textTransform: 'uppercase' },
     h1: { fontSize: 30, fontWeight: 800, color: ink, margin: '4px 0 4px', lineHeight: 1.1 },
     subtitle: { color: muted, fontSize: 14.5, margin: 0 },
     headerAction: { alignSelf: 'center' },
@@ -574,7 +573,6 @@ function FeedPage({ match }) {
 
       <div className={classes.header}>
         <div className={classes.headerText}>
-          <div className={classes.eyebrow}>{fm('communications.feed.eyebrow')}</div>
           <h1 className={classes.h1}>{fm('communications.feed.page.title')}</h1>
           <p className={classes.subtitle}>{fm('communications.feed.subtitle')}</p>
         </div>
