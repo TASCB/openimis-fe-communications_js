@@ -155,10 +155,29 @@ export function fetchStakeholderTypes(modulesManager, params = ['first: 100', 'i
 }
 
 // ---- generic child collections (per activity) -----------------------------
-const childFetch = (field, projection, type, activityId) => graphql(
-  formatPageQueryWithCount(field, [`activityId: "${encId('CommunicationActivityGQLType', activityId)}"`, 'first: 100'], projection()),
-  type,
-);
+const PAGE_SIZE = 100;
+const childFetch = (field, projection, type, activityId) => async (dispatch) => {
+  dispatch({ type: REQUEST(type) });
+  const filters = [`activityId: "${encId('CommunicationActivityGQLType', activityId)}"`];
+  const edges = [];
+  let after = null;
+  do {
+    const params = [...filters, `first: ${PAGE_SIZE}`, ...(after ? [`after: "${after}"`] : [])];
+    // eslint-disable-next-line no-await-in-loop
+    const response = await dispatch(graphql(formatPageQueryWithCount(field, params, projection()), `${type}_PAGE`));
+    const page = response?.payload?.data?.[field];
+    if (!response || response.error || response.payload?.errors || !page) {
+      dispatch({ type: ERROR(type), payload: response?.payload });
+      return;
+    }
+    edges.push(...page.edges);
+    after = page.pageInfo?.hasNextPage ? page.pageInfo.endCursor : null;
+  } while (after);
+  dispatch({
+    type: SUCCESS(type),
+    payload: { data: { [field]: { totalCount: edges.length, pageInfo: { hasNextPage: false }, edges } } },
+  });
+};
 const childSave = (createName, updateName, gql, obj, label) => {
   const serviceName = obj.id ? updateName : createName;
   const m = formatMutation(serviceName, gql(obj), label);
