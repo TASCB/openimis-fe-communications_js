@@ -6,20 +6,20 @@ import {
   IconButton, Button, Tooltip, TextField, Link,
 } from '@material-ui/core';
 import DeleteIcon from '@material-ui/icons/Delete';
+import DeleteOutlineIcon from '@material-ui/icons/DeleteOutline';
 import {
-  Helmet, useTranslations, useModulesManager, journalize, baseApiUrl,
+  Helmet, useTranslations, useModulesManager, journalize, baseApiUrl, TextInput, useToast,
+  coreConfirm, clearConfirm,
 } from '@openimis/fe-core';
+import { UploadBar } from '@openimis/fe-tasaf_common';
 import {
-  MODULE_NAME, RIGHT_TEMPLATE_MANAGE, RIGHT_STAKEHOLDER_MANAGE, RIGHT_LIBRARY_UPLOAD,
-  RIGHT_MEDIA_HOUSE_CATEGORY_MANAGE,
+  MODULE_NAME, RIGHT_TEMPLATE_MANAGE, RIGHT_LIBRARY_UPLOAD,
 } from '../constants';
 import {
   fetchTemplates, saveTemplate, deleteTemplate,
-  fetchStakeholderLists, saveStakeholderList, deleteStakeholderList,
   fetchLibraryAssets, deleteLibraryAsset, uploadLibraryAsset,
-  fetchMediaHouseCategories, saveMediaHouseCategory, deleteMediaHouseCategory,
 } from '../actions';
-import { ChannelTypePicker, MediaMediumPicker, MediaScopePicker } from '../pickers/ConstantPickers';
+import { ChannelTypePicker, AssetTypePicker } from '../pickers/ConstantPickers';
 
 const useStyles = makeStyles((theme) => ({
   page: theme.page,
@@ -29,10 +29,15 @@ const useStyles = makeStyles((theme) => ({
   selectedTab: { borderBottom: '4px solid white' },
   unselectedTab: { borderBottom: '4px solid transparent' },
   content: { padding: theme.spacing(2) },
-  addRow: { padding: theme.spacing(1, 0) },
+  item: theme.paper.item,
+  empty: { color: theme.palette.text.secondary, textAlign: 'center', padding: theme.spacing(3) },
 }));
 
-function TemplatesTab({ classes }) {
+const BLANK_ASSET = {
+  code: '', name: '', assetType: 'DOCUMENT', description: '', file: null,
+};
+
+function TemplatesTab() {
   const dispatch = useDispatch();
   const modulesManager = useModulesManager();
   const { formatMessage } = useTranslations(MODULE_NAME, modulesManager);
@@ -78,155 +83,135 @@ function TemplatesTab({ classes }) {
   );
 }
 
-function StakeholderListsTab() {
-  const dispatch = useDispatch();
-  const modulesManager = useModulesManager();
-  const { formatMessage } = useTranslations(MODULE_NAME, modulesManager);
-  const rights = useSelector((s) => s.core.user.i_user.rights ?? []);
-  const items = useSelector((s) => s.communications.stakeholderLists);
-  const submitting = useSelector((s) => s.communications.submittingMutation);
-  const mutation = useSelector((s) => s.communications.mutation);
-  const [row, setRow] = useState({ code: '', name: '' });
-  const prev = useRef();
-  const refetch = () => dispatch(fetchStakeholderLists(modulesManager, ['first: 100']));
-  useEffect(() => { refetch(); }, []);
-  useEffect(() => { if (prev.current && !submitting) { dispatch(journalize(mutation)); refetch(); } }, [submitting]);
-  useEffect(() => { prev.current = submitting; });
-  const canManage = rights.includes(RIGHT_STAKEHOLDER_MANAGE);
-  const add = () => { if (row.code && row.name) { dispatch(saveStakeholderList({ ...row, isActive: true }, formatMessage('communications.stakeholderList.add'))); setRow({ code: '', name: '' }); } };
-  return (
-    <Table size="small">
-      <TableHead><TableRow>
-        <TableCell>{formatMessage('communications.code')}</TableCell>
-        <TableCell>{formatMessage('communications.stakeholderList.name')}</TableCell>
-        <TableCell />
-      </TableRow></TableHead>
-      <TableBody>
-        {(items ?? []).map((s) => (
-          <TableRow key={s.id}>
-            <TableCell>{s.code}</TableCell>
-            <TableCell>{s.name}</TableCell>
-            <TableCell>{canManage && <Tooltip title={formatMessage('deleteButton.tooltip')}><IconButton size="small" onClick={() => dispatch(deleteStakeholderList(s, formatMessage('communications.stakeholderList.delete')))}><DeleteIcon /></IconButton></Tooltip>}</TableCell>
-          </TableRow>
-        ))}
-        {canManage && (
-          <TableRow>
-            <TableCell><TextField value={row.code} placeholder="code" onChange={(e) => setRow({ ...row, code: e.target.value })} /></TableCell>
-            <TableCell><TextField value={row.name} placeholder="name" onChange={(e) => setRow({ ...row, name: e.target.value })} /></TableCell>
-            <TableCell><Button variant="contained" size="small" color="primary" onClick={add} disabled={!row.code || !row.name}>{formatMessage('addButton')}</Button></TableCell>
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
-  );
-}
-
 function AssetsTab() {
+  const classes = useStyles();
   const dispatch = useDispatch();
   const modulesManager = useModulesManager();
-  const { formatMessage } = useTranslations(MODULE_NAME, modulesManager);
+  const { formatMessage, formatMessageWithValues } = useTranslations(MODULE_NAME, modulesManager);
+  const toast = useToast();
   const rights = useSelector((s) => s.core.user.i_user.rights ?? []);
   const items = useSelector((s) => s.communications.libraryAssets);
   const submitting = useSelector((s) => s.communications.submittingMutation);
   const mutation = useSelector((s) => s.communications.mutation);
-  const [form, setForm] = useState({ code: '', name: '', file: null });
+  const confirmed = useSelector((s) => s.core.confirmed);
+  const [form, setForm] = useState(BLANK_ASSET);
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [toDelete, setToDelete] = useState(null);
   const prev = useRef();
   const refetch = () => dispatch(fetchLibraryAssets(modulesManager, ['first: 100']));
   useEffect(() => { refetch(); }, []);
   useEffect(() => { if (prev.current && !submitting) { dispatch(journalize(mutation)); refetch(); } }, [submitting]);
   useEffect(() => { prev.current = submitting; });
+  useEffect(() => {
+    if (toDelete) {
+      dispatch(coreConfirm(
+        formatMessage('communications.asset.deleteDialog.title'),
+        formatMessageWithValues('communications.asset.deleteDialog.message', { name: toDelete.name }),
+      ));
+    }
+  }, [toDelete]);
+  useEffect(() => {
+    if (toDelete && confirmed) dispatch(deleteLibraryAsset(toDelete, formatMessage('communications.asset.delete')));
+    if (confirmed !== null) setToDelete(null);
+    return () => confirmed !== null && dispatch(clearConfirm(false));
+  }, [confirmed]);
+
   const canUpload = rights.includes(RIGHT_LIBRARY_UPLOAD);
+  const ready = !!(form.file && form.code.trim() && form.name.trim());
   const upload = async () => {
-    if (!form.file || !form.code || !form.name) return;
+    if (!ready) return;
     setBusy(true);
-    await uploadLibraryAsset(form);
-    setBusy(false); setForm({ code: '', name: '', file: null }); refetch();
+    const res = await uploadLibraryAsset(form);
+    setBusy(false);
+    if (res?.success) {
+      setForm(BLANK_ASSET);
+      setFailed(false);
+      refetch();
+    } else {
+      const reason = res?.error || res?.message || res?.detail || '';
+      setFailed(true);
+      toast.showError(formatMessageWithValues('communications.file.uploadFailed', {
+        name: form.file.name,
+        reason: /413/.test(reason) ? formatMessage('communications.file.tooLarge') : reason,
+      }));
+    }
   };
+  const list = items ?? [];
+
   return (
     <>
+      {canUpload && (
+        <UploadBar
+          title={formatMessage('communications.asset.add')}
+          chooseLabel={formatMessage('communications.asset.chooseFile')}
+          uploadLabel={formatMessage('communications.file.upload')}
+          descriptionLabel={formatMessage('communications.file.description')}
+          multiple={false}
+          files={form.file ? [form.file] : []}
+          failed={failed && form.file ? [form.file] : []}
+          canUpload={ready}
+          busy={busy}
+          description={form.description}
+          onDescriptionChange={(v) => setForm((f) => ({ ...f, description: v }))}
+          onAddFiles={(list) => {
+            const file = list[0] ?? null;
+            setFailed(false);
+            setForm((f) => ({ ...f, file, name: f.name || (file ? file.name.replace(/\.[^.]+$/, '') : '') }));
+          }}
+          onRemoveFile={() => { setForm((f) => ({ ...f, file: null })); setFailed(false); }}
+          onUpload={upload}
+        >
+          <Grid item xs={12} md={2} className={classes.item}>
+            <TextInput module="communications" label="communications.code" required
+              value={form.code} onChange={(v) => setForm((f) => ({ ...f, code: v }))} />
+          </Grid>
+          <Grid item xs={12} md={6} className={classes.item}>
+            <TextInput module="communications" label="communications.asset.name" required
+              value={form.name} onChange={(v) => setForm((f) => ({ ...f, name: v }))} />
+          </Grid>
+          <Grid item xs={12} md={4} className={classes.item}>
+            <AssetTypePicker withLabel value={form.assetType}
+              onChange={(v) => setForm((f) => ({ ...f, assetType: v || BLANK_ASSET.assetType }))} />
+          </Grid>
+        </UploadBar>
+      )}
       <Table size="small">
-        <TableHead><TableRow>
-          <TableCell>{formatMessage('communications.code')}</TableCell>
-          <TableCell>{formatMessage('communications.asset.name')}</TableCell>
-          <TableCell>{formatMessage('communications.asset.file')}</TableCell>
-          <TableCell />
-        </TableRow></TableHead>
+        <TableHead>
+          <TableRow>
+            <TableCell>{formatMessage('communications.code')}</TableCell>
+            <TableCell>{formatMessage('communications.asset.name')}</TableCell>
+            <TableCell>{formatMessage('communications.assetType')}</TableCell>
+            <TableCell>{formatMessage('communications.asset.file')}</TableCell>
+            <TableCell>{formatMessage('communications.file.description')}</TableCell>
+            <TableCell />
+          </TableRow>
+        </TableHead>
         <TableBody>
-          {(items ?? []).map((a) => (
+          {!list.length && (
+            <TableRow>
+              <TableCell colSpan={6} className={classes.empty}>{formatMessage('communications.asset.empty')}</TableCell>
+            </TableRow>
+          )}
+          {list.map((a) => (
             <TableRow key={a.id}>
               <TableCell>{a.code}</TableCell>
               <TableCell>{a.name}</TableCell>
+              <TableCell>{a.assetType ? formatMessage(`communications.assetType.${a.assetType}`) : ''}</TableCell>
               <TableCell><Link href={`${baseApiUrl}/communications/library/${a.id}/download/`} target="_blank" rel="noopener">{a.fileName}</Link></TableCell>
-              <TableCell>{canUpload && <Tooltip title={formatMessage('deleteButton.tooltip')}><IconButton size="small" onClick={() => dispatch(deleteLibraryAsset(a, formatMessage('communications.asset.delete')))}><DeleteIcon /></IconButton></Tooltip>}</TableCell>
+              <TableCell>{a.description}</TableCell>
+              <TableCell>
+                {canUpload && (
+                  <Tooltip title={formatMessage('deleteButton.tooltip')}>
+                    <IconButton size="small" onClick={() => setToDelete(a)}><DeleteOutlineIcon /></IconButton>
+                  </Tooltip>
+                )}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-      {canUpload && (
-        <Grid container alignItems="center" spacing={2} style={{ padding: 12 }}>
-          <Grid item><TextField label="code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} /></Grid>
-          <Grid item><TextField label="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Grid>
-          <Grid item><input type="file" onChange={(e) => setForm({ ...form, file: e.target.files?.[0] ?? null })} /></Grid>
-          <Grid item><Button variant="contained" color="primary" onClick={upload} disabled={busy || !form.file || !form.code || !form.name}>{formatMessage('communications.file.upload')}</Button></Grid>
-        </Grid>
-      )}
     </>
-  );
-}
-
-// Config-grade reference data, so it lives in the Library rather than its own menu entry.
-function MediaCategoriesTab() {
-  const dispatch = useDispatch();
-  const modulesManager = useModulesManager();
-  const { formatMessage } = useTranslations(MODULE_NAME, modulesManager);
-  const rights = useSelector((s) => s.core.user.i_user.rights ?? []);
-  const items = useSelector((s) => s.communications.mediaHouseCategories);
-  const submitting = useSelector((s) => s.communications.submittingMutation);
-  const mutation = useSelector((s) => s.communications.mutation);
-  const [row, setRow] = useState({ code: '', name: '', medium: 'RADIO', scope: 'NATIONAL' });
-  const prev = useRef();
-  const refetch = () => dispatch(fetchMediaHouseCategories(modulesManager, ['first: 100']));
-  useEffect(() => { refetch(); }, []);
-  useEffect(() => { if (prev.current && !submitting) { dispatch(journalize(mutation)); refetch(); } }, [submitting]);
-  useEffect(() => { prev.current = submitting; });
-  const canManage = rights.includes(RIGHT_MEDIA_HOUSE_CATEGORY_MANAGE);
-  const add = () => {
-    if (row.code && row.name) {
-      dispatch(saveMediaHouseCategory({ ...row, isActive: true }, formatMessage('communications.mediaCategory.add')));
-      setRow({ code: '', name: '', medium: 'RADIO', scope: 'NATIONAL' });
-    }
-  };
-  return (
-    <Table size="small">
-      <TableHead><TableRow>
-        <TableCell>{formatMessage('communications.code')}</TableCell>
-        <TableCell>{formatMessage('communications.mediaCategory.name')}</TableCell>
-        <TableCell>{formatMessage('communications.medium')}</TableCell>
-        <TableCell>{formatMessage('communications.scope')}</TableCell>
-        <TableCell />
-      </TableRow></TableHead>
-      <TableBody>
-        {(items ?? []).map((c) => (
-          <TableRow key={c.id}>
-            <TableCell>{c.code}</TableCell>
-            <TableCell>{c.name}</TableCell>
-            <TableCell>{c.medium ? formatMessage(`communications.medium.${c.medium}`) : ''}</TableCell>
-            <TableCell>{c.scope ? formatMessage(`communications.scope.${c.scope}`) : ''}</TableCell>
-            <TableCell>{canManage && <Tooltip title={formatMessage('deleteButton.tooltip')}><IconButton size="small" onClick={() => dispatch(deleteMediaHouseCategory(c, formatMessage('communications.mediaCategory.delete')))}><DeleteIcon /></IconButton></Tooltip>}</TableCell>
-          </TableRow>
-        ))}
-        {canManage && (
-          <TableRow>
-            <TableCell><TextField value={row.code} placeholder="code" onChange={(e) => setRow({ ...row, code: e.target.value })} /></TableCell>
-            <TableCell><TextField value={row.name} placeholder="name" onChange={(e) => setRow({ ...row, name: e.target.value })} /></TableCell>
-            <TableCell><MediaMediumPicker value={row.medium} onChange={(v) => setRow({ ...row, medium: v })} /></TableCell>
-            <TableCell><MediaScopePicker value={row.scope} onChange={(v) => setRow({ ...row, scope: v })} /></TableCell>
-            <TableCell><Button variant="contained" size="small" color="primary" onClick={add} disabled={!row.code || !row.name}>{formatMessage('addButton')}</Button></TableCell>
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
   );
 }
 
@@ -236,10 +221,8 @@ function LibraryPage() {
   const { formatMessage } = useTranslations(MODULE_NAME, modulesManager);
   const [active, setActive] = useState(0);
   const tabs = [
-    { key: 'templates', label: 'communications.library.templates', render: () => <TemplatesTab classes={classes} /> },
-    { key: 'stakeholders', label: 'communications.library.stakeholderLists', render: () => <StakeholderListsTab /> },
+    { key: 'templates', label: 'communications.library.templates', render: () => <TemplatesTab /> },
     { key: 'assets', label: 'communications.library.assets', render: () => <AssetsTab /> },
-    { key: 'mediaCategories', label: 'communications.library.mediaCategories', render: () => <MediaCategoriesTab /> },
   ];
   return (
     <div className={classes.page}>

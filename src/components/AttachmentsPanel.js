@@ -3,34 +3,20 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { useIntl } from 'react-intl';
 import {
-  Table, TableHead, TableRow, TableCell, TableBody, IconButton, Button, Tooltip, Link, Grid,
-  Typography, Divider, Chip, CircularProgress,
+  Table, TableHead, TableRow, TableCell, TableBody, IconButton, Tooltip, Link,
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import DeleteIcon from '@material-ui/icons/DeleteOutline';
-import AttachFileIcon from '@material-ui/icons/AttachFile';
-import CloudUploadIcon from '@material-ui/icons/CloudUploadOutlined';
 import {
-  useModulesManager, useTranslations, journalize, baseApiUrl, formatDateTimeFromISO, TextInput, useToast,
+  useModulesManager, useTranslations, journalize, baseApiUrl, formatDateTimeFromISO, useToast,
   coreConfirm, clearConfirm,
 } from '@openimis/fe-core';
+import { UploadBar } from '@openimis/fe-tasaf_common';
 import { fetchAttachments, deleteAttachment, uploadAttachment } from '../actions';
 
 const useStyles = makeStyles((theme) => ({
-  form: { padding: theme.spacing(1, 0) },
-  item: theme.paper.item,
-  formTitle: { color: theme.palette.primary.main, fontWeight: 500 },
-  chips: { display: 'flex', flexWrap: 'wrap', gap: theme.spacing(1) },
   empty: { color: theme.palette.text.secondary, textAlign: 'center', padding: theme.spacing(3) },
-  chipFailed: { borderColor: theme.palette.error.main, color: theme.palette.error.main },
 }));
-
-function formatBytes(n) {
-  if (!n && n !== 0) return '';
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
-  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 function AttachmentsPanel({
   activityId, readOnly, attachments, submittingMutation, mutation, confirmed,
@@ -46,7 +32,6 @@ function AttachmentsPanel({
   const [toDelete, setToDelete] = useState(null);
   const [description, setDescription] = useState('');
   const [busy, setBusy] = useState(false);
-  const inputRef = useRef(null);
   const prev = useRef();
   const refetch = () => activityId && fetchAttachments(activityId);
   useEffect(() => { refetch(); }, [activityId]);
@@ -66,7 +51,6 @@ function AttachmentsPanel({
     return () => confirmed !== null && clearConfirm(false);
   }, [confirmed]);
 
-  const addFiles = (list) => setFiles((current) => [...current, ...Array.from(list || [])]);
   const removeFile = (index) => setFiles((current) => current.filter((_, i) => i !== index));
   const failureReason = (res) => {
     const reason = res?.error || res?.message || res?.detail || '';
@@ -97,50 +81,20 @@ function AttachmentsPanel({
   return (
     <>
       {!readOnly && (
-        <>
-          <Grid container className={classes.form} alignItems="flex-end">
-            <Grid item xs={12} className={classes.item}>
-              <Typography className={classes.formTitle}>{formatMessage('communications.file.addTitle')}</Typography>
-            </Grid>
-            <Grid item className={classes.item}>
-              <input
-                ref={inputRef} type="file" multiple hidden
-                onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }}
-              />
-              <Button variant="outlined" color="primary" startIcon={<AttachFileIcon />} onClick={() => inputRef.current?.click()}>
-                {formatMessage('communications.file.choose')}
-              </Button>
-            </Grid>
-            <Grid item xs className={classes.item}>
-              <TextInput module="communications" label="communications.file.description" value={description} onChange={setDescription} />
-            </Grid>
-            <Grid item className={classes.item}>
-              <Button
-                variant="contained" color="primary" onClick={upload} disabled={!files.length || busy}
-                startIcon={busy ? <CircularProgress size={16} color="inherit" /> : <CloudUploadIcon />}
-              >
-                {formatMessage('communications.file.upload')}
-              </Button>
-            </Grid>
-            {files.length > 0 && (
-              <Grid item xs={12} className={classes.item}>
-                <div className={classes.chips}>
-                  {files.map((f, i) => (
-                    <Chip
-                      // eslint-disable-next-line react/no-array-index-key
-                      key={`${f.name}-${i}`}
-                      variant="outlined"
-                      className={failed.includes(f) ? classes.chipFailed : undefined}
-                      label={`${f.name} · ${formatBytes(f.size)}`}
-                      onDelete={busy ? undefined : () => removeFile(i)}
-                    />
-                  ))}
-                </div>
-              </Grid>
-            )}
-          </Grid>
-          <Divider />
-        </>
+        <UploadBar
+          title={formatMessage('communications.file.addTitle')}
+          chooseLabel={formatMessage('communications.file.choose')}
+          uploadLabel={formatMessage('communications.file.upload')}
+          descriptionLabel={formatMessage('communications.file.description')}
+          files={files}
+          failed={failed}
+          busy={busy}
+          description={description}
+          onDescriptionChange={setDescription}
+          onAddFiles={(list) => setFiles((current) => [...current, ...list])}
+          onRemoveFile={removeFile}
+          onUpload={upload}
+        />
       )}
       <Table size="small">
         <TableHead><TableRow>

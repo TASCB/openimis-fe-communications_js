@@ -23,7 +23,6 @@ export const ACTION_TYPE = {
   SEARCH_ATTACHMENTS: 'COMMS_ATTACHMENTS',
   SEARCH_FEEDBACK: 'COMMS_FEEDBACK',
   SEARCH_TEMPLATES: 'COMMS_TEMPLATES',
-  SEARCH_STAKEHOLDER_LISTS: 'COMMS_STAKEHOLDER_LISTS',
   SEARCH_LIBRARY_ASSETS: 'COMMS_LIBRARY_ASSETS',
   SEARCH_POSTS: 'COMMS_POSTS',
   SEARCH_ANNOUNCEMENTS: 'COMMS_ANNOUNCEMENTS',
@@ -40,7 +39,6 @@ export const ACTION_TYPE = {
   MANAGE_CHILD: 'COMMS_MANAGE_CHILD',
   MANAGE_POST: 'COMMS_MANAGE_POST',
   MANAGE_LIBRARY: 'COMMS_MANAGE_LIBRARY',
-  SEARCH_MEDIA_HOUSE_CATEGORIES: 'COMMS_MEDIA_HOUSE_CATEGORIES',
   SEARCH_MEDIA_HOUSES: 'COMMS_MEDIA_HOUSES',
   GET_MEDIA_HOUSE: 'COMMS_MEDIA_HOUSE',
   SEARCH_JOURNALISTS: 'COMMS_JOURNALISTS',
@@ -60,14 +58,12 @@ const STORE_STATE = {
   activityMediaHouses: [], participants: [],
   activityChannels: [], objectives: [], audiences: [], assignments: [], attachments: [], feedback: [],
   templates: [], templatesPageInfo: {}, templatesTotalCount: 0, fetchingTemplates: false, fetchedTemplates: false, errorTemplates: null,
-  stakeholderLists: [], stakeholderListsPageInfo: {}, stakeholderListsTotalCount: 0, fetchingStakeholderLists: false, fetchedStakeholderLists: false, errorStakeholderLists: null,
   libraryAssets: [], libraryAssetsPageInfo: {}, libraryAssetsTotalCount: 0, fetchingLibraryAssets: false, fetchedLibraryAssets: false, errorLibraryAssets: null,
   posts: [], postsPageInfo: {}, postsTotalCount: 0, fetchingPosts: false, fetchedPosts: false, errorPosts: null,
   announcements: [], fetchingAnnouncements: false, fetchedAnnouncements: false, errorAnnouncements: null,
   summary: null, fetchingSummary: false, errorSummary: null,
   calendar: [], fetchingCalendar: false, errorCalendar: null,
   conflicts: [], fetchingConflicts: false,
-  mediaHouseCategories: [], fetchingMediaHouseCategories: false,
   mediaHouses: [], mediaHousesPageInfo: {}, mediaHousesTotalCount: 0, fetchingMediaHouses: false, fetchedMediaHouses: false, errorMediaHouses: null,
   mediaHouse: null, fetchingMediaHouse: false, fetchedMediaHouse: false, errorMediaHouse: null,
   journalists: [], journalistsPageInfo: {}, journalistsTotalCount: 0, fetchingJournalists: false, fetchedJournalists: false, errorJournalists: null,
@@ -149,10 +145,6 @@ function reducer(state = STORE_STATE, action) {
     case SUCCESS(ACTION_TYPE.SEARCH_TEMPLATES):
     case ERROR(ACTION_TYPE.SEARCH_TEMPLATES):
       return listReducer(state, action, ACTION_TYPE.SEARCH_TEMPLATES, 'templates', 'Templates');
-    case REQUEST(ACTION_TYPE.SEARCH_STAKEHOLDER_LISTS):
-    case SUCCESS(ACTION_TYPE.SEARCH_STAKEHOLDER_LISTS):
-    case ERROR(ACTION_TYPE.SEARCH_STAKEHOLDER_LISTS):
-      return listReducer(state, action, ACTION_TYPE.SEARCH_STAKEHOLDER_LISTS, 'stakeholderLists', 'StakeholderLists');
     case REQUEST(ACTION_TYPE.SEARCH_LIBRARY_ASSETS):
     case SUCCESS(ACTION_TYPE.SEARCH_LIBRARY_ASSETS):
     case ERROR(ACTION_TYPE.SEARCH_LIBRARY_ASSETS):
@@ -182,10 +174,6 @@ function reducer(state = STORE_STATE, action) {
     case CLEAR(ACTION_TYPE.GET_JOURNALIST):
       return objectReducer(state, action, ACTION_TYPE.GET_JOURNALIST, 'journalist', 'journalist', 'Journalist');
 
-    case REQUEST(ACTION_TYPE.SEARCH_MEDIA_HOUSE_CATEGORIES):
-    case SUCCESS(ACTION_TYPE.SEARCH_MEDIA_HOUSE_CATEGORIES):
-    case ERROR(ACTION_TYPE.SEARCH_MEDIA_HOUSE_CATEGORIES):
-      return childReducer(state, action, ACTION_TYPE.SEARCH_MEDIA_HOUSE_CATEGORIES, 'mediaHouseCategory', 'mediaHouseCategories');
 
     case REQUEST(ACTION_TYPE.GET_ACTIVITY):
       return {

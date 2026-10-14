@@ -24,7 +24,6 @@ const ASSIGNMENT_PROJECTION = () => ['id', 'role', 'status', 'notes', 'staffUser
 const ATTACHMENT_PROJECTION = () => ['id', 'fileName', 'fileType', 'description', 'fileUrl', 'dateCreated', 'userCreated { username }'];
 const FEEDBACK_PROJECTION = () => ['id', 'source', 'respondent', 'rating', 'comment', 'channel { id name }'];
 const TEMPLATE_PROJECTION = () => ['id', 'code', 'name', 'channelType', 'subject', 'body', 'isActive'];
-const STAKEHOLDER_LIST_PROJECTION = () => ['id', 'code', 'name', 'description', 'isActive'];
 const LIBRARY_PROJECTION = () => ['id', 'code', 'name', 'assetType', 'fileName', 'fileType', 'fileUrl', 'description', 'isActive'];
 const PARTICIPANT_PROJECTION = () => [
   'id', 'fullName', 'gender', 'organization', 'title', 'phone', 'email',
@@ -38,7 +37,6 @@ const ACTIVITY_MEDIA_HOUSE_PROJECTION = () => [
   'mediaHouse { id code name category { id name medium scope } }', 'activity { id }',
   'journalist { id code firstName lastName isFreelance }',
 ];
-const MEDIA_HOUSE_CATEGORY_PROJECTION = () => ['id', 'code', 'name', 'medium', 'scope', 'description', 'isActive'];
 const MEDIA_HOUSE_PROJECTION = () => [
   'id', 'code', 'name', 'avgCoverageQuality', 'coverageCount', 'frequencyOrChannel', 'language', 'contactPerson', 'phone', 'email',
   'website', 'address', 'notes', 'isActive',
@@ -326,22 +324,6 @@ export function deleteTemplate(t, label) {
   return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_LIBRARY,
     { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'deleteCommunicationTemplate', requestedDateTime: new Date() });
 }
-export function fetchStakeholderLists(modulesManager, params) {
-  return graphql(formatPageQueryWithCount('stakeholderList', params, STAKEHOLDER_LIST_PROJECTION()),
-    ACTION_TYPE.SEARCH_STAKEHOLDER_LISTS, { gqlField: 'stakeholderList' });
-}
-export function saveStakeholderList(s, label) {
-  const serviceName = s.id ? 'updateStakeholderList' : 'createStakeholderList';
-  const gql = [str('id', s?.id), str('code', s?.code), str('name', s?.name), str('description', s?.description), raw('isActive', s?.isActive)].filter(Boolean).join('\n');
-  const m = formatMutation(serviceName, gql, label);
-  return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_LIBRARY,
-    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName, requestedDateTime: new Date() });
-}
-export function deleteStakeholderList(s, label) {
-  const m = formatMutation('deleteStakeholderList', list('ids', [s.id]), label);
-  return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_LIBRARY,
-    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'deleteStakeholderList', requestedDateTime: new Date() });
-}
 export function fetchLibraryAssets(modulesManager, params) {
   return graphql(formatPageQueryWithCount('libraryAsset', params, LIBRARY_PROJECTION()),
     ACTION_TYPE.SEARCH_LIBRARY_ASSETS, { gqlField: 'libraryAsset' });
@@ -431,26 +413,6 @@ export function submitPostForApproval(postId, label) {
 }
 
 // ---- media-house / journalist registries -----------------------------------
-export function fetchMediaHouseCategories(modulesManager, params = ['first: 100', 'isActive: true']) {
-  return graphql(formatPageQueryWithCount('mediaHouseCategory', params, MEDIA_HOUSE_CATEGORY_PROJECTION()),
-    ACTION_TYPE.SEARCH_MEDIA_HOUSE_CATEGORIES, { gqlField: 'mediaHouseCategory' });
-}
-export function saveMediaHouseCategory(c, label) {
-  const serviceName = c.id ? 'updateMediaHouseCategory' : 'createMediaHouseCategory';
-  const gql = [
-    str('id', c?.id), str('code', c?.code), str('name', c?.name),
-    raw('medium', c?.medium), raw('scope', c?.scope),
-    str('description', c?.description), raw('isActive', c?.isActive),
-  ].filter(Boolean).join('\n');
-  const m = formatMutation(serviceName, gql, label);
-  return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_REGISTRY,
-    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName, requestedDateTime: new Date() });
-}
-export function deleteMediaHouseCategory(c, label) {
-  const m = formatMutation('deleteMediaHouseCategory', list('ids', [c.id]), label);
-  return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_REGISTRY,
-    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'deleteMediaHouseCategory', requestedDateTime: new Date() });
-}
 
 export function fetchMediaHouses(modulesManager, params) {
   return graphql(formatPageQueryWithCount('mediaHouse', params, MEDIA_HOUSE_PROJECTION()),
