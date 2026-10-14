@@ -202,7 +202,7 @@ const useStyles = makeStyles((theme) => {
 
     // ---- attachments (composer + card) ----
     staged: { display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 12 },
-    attachHeader: { display: 'inline-flex', alignItems: 'center', gap: 6, color: muted, fontWeight: 800, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', margin: '16px 0 10px' },
+    attachHeader: { display: 'flex', alignItems: 'center', gap: 6, color: muted, fontWeight: 800, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', margin: '16px 0 10px' },
     attachList: { display: 'flex', flexWrap: 'wrap', gap: 10 },
     attachCard: {
       display: 'inline-flex', alignItems: 'center', gap: 10, border: `1px solid ${border}`, borderRadius: 10,
