@@ -6,18 +6,13 @@ import { makeStyles } from '@material-ui/styles';
 import { useIntl } from 'react-intl';
 import {
   Paper, IconButton, Tooltip, CircularProgress, Grid, Button, Divider, Typography, Menu, MenuItem,
+  TextField,
 } from '@material-ui/core';
-import VolumeUpOutlined from '@material-ui/icons/VolumeUpOutlined';
-import FlashOnOutlined from '@material-ui/icons/FlashOnOutlined';
-import PermMediaOutlined from '@material-ui/icons/PermMediaOutlined';
-import EmailOutlined from '@material-ui/icons/EmailOutlined';
 import FlagOutlined from '@material-ui/icons/FlagOutlined';
 import ScheduleOutlined from '@material-ui/icons/ScheduleOutlined';
 import EditOutlined from '@material-ui/icons/EditOutlined';
 import MoreVert from '@material-ui/icons/MoreVert';
 import DeleteOutline from '@material-ui/icons/DeleteOutline';
-import SearchOutlined from '@material-ui/icons/SearchOutlined';
-import PeopleOutline from '@material-ui/icons/PeopleOutline';
 import Send from '@material-ui/icons/Send';
 import AttachFileOutlined from '@material-ui/icons/AttachFileOutlined';
 import VisibilityOutlined from '@material-ui/icons/VisibilityOutlined';
@@ -25,7 +20,7 @@ import GetAppOutlined from '@material-ui/icons/GetAppOutlined';
 import Close from '@material-ui/icons/Close';
 import {
   Helmet, useTranslations, useModulesManager, useHistory, journalize, ProgressOrError,
-  formatMessageWithValues, baseApiUrl, TextInput, coreConfirm, clearConfirm,
+  formatMessageWithValues, baseApiUrl, TextInput, coreConfirm, clearConfirm, SearcherPane,
 } from '@openimis/fe-core';
 import {
   MODULE_NAME, RIGHT_POST_MANAGE, RIGHT_POST_PUBLISH, COMMS_ROUTE_FEED,
@@ -41,13 +36,6 @@ import RichText from '../components/RichText';
 import { htmlToText, sanitizeHtml } from '../components/htmlSanitize';
 import { parseDate, relTime } from '../utils/dates';
 
-const TYPES = ['ANNOUNCEMENT', 'UPDATE', 'MEDIA_HIGHLIGHT', 'NEWSLETTER'];
-const TYPE_ICONS = {
-  ANNOUNCEMENT: VolumeUpOutlined,
-  UPDATE: FlashOnOutlined,
-  MEDIA_HIGHLIGHT: PermMediaOutlined,
-  NEWSLETTER: EmailOutlined,
-};
 const MAX_LEN = 1200;
 const FEED_LIMIT = 100;
 const STATE_LABELS = {
@@ -101,7 +89,11 @@ const useStyles = makeStyles((theme) => {
     paper: theme.paper.paper,
     tableTitle: theme.table.title,
     item: theme.paper.item,
-    composer: { marginBottom: 24 },
+    composer: { margin: '0 0 16px' },
+    feedList: { marginTop: 16 },
+    filterForm: { padding: 0 },
+    filterItem: { padding: theme.spacing(1) },
+    filterLabel: { color: teal },
     composerFooter: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' },
     fieldCaption: { display: 'block', color: teal, fontSize: '0.75rem', marginBottom: 8 },
 
@@ -123,50 +115,25 @@ const useStyles = makeStyles((theme) => {
     counterOver: { color: '#c0392b' },
 
     footerHint: { color: muted, fontSize: 13 },
-    btnGhost: {
-      background: '#fff', color: teal, border: `1px solid ${teal}`, borderRadius: 10, padding: '11px 18px',
-      fontSize: 14.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
-      '&:hover': { background: `${teal}0d` },
-      '&:focus-visible': { outline: 'none', boxShadow: `0 0 0 3px ${teal}40` },
-    },
     linkBtn: {
       background: 'none', border: 0, color: teal, fontWeight: 700, fontSize: 13, cursor: 'pointer', padding: 0, fontFamily: 'inherit',
       '&:hover': { textDecoration: 'underline' },
       '&:focus-visible': { outline: 'none', boxShadow: `0 0 0 3px ${teal}40`, borderRadius: 4 },
     },
 
-    filterBar: { display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 8 },
-    segment: { display: 'inline-flex', flexWrap: 'wrap', gap: 4, background: '#fff', border: `1px solid ${border}`, borderRadius: 12, padding: 4 },
-    segBtn: {
-      display: 'inline-flex', alignItems: 'center', gap: 7, border: 0, background: 'none', borderRadius: 9, padding: '8px 14px',
-      fontSize: 13.5, fontWeight: 700, color: muted, cursor: 'pointer', fontFamily: 'inherit', transition: 'background .15s, color .15s',
-      '&:hover': { background: '#f0f5f3' },
-      '&:focus-visible': { outline: 'none', boxShadow: `0 0 0 3px ${teal}40` },
-    },
-    segBtnActive: { background: teal, color: '#fff', '&:hover': { background: teal } },
-    segCount: { fontSize: 12, fontWeight: 800, background: 'rgba(0,0,0,.08)', borderRadius: 999, padding: '1px 8px' },
-    segCountActive: { background: 'rgba(255,255,255,.25)' },
-    search: { display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: `1px solid ${border}`, borderRadius: 12, padding: '8px 14px', minWidth: 220, flex: '0 1 320px' },
-    searchInput: { border: 'none', outline: 'none', background: 'none', fontSize: 14, flex: 1, color: ink, fontFamily: 'inherit' },
 
     sectionHead: { display: 'flex', alignItems: 'center', gap: 8, color: muted, fontWeight: 800, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', margin: '20px 0 12px' },
-    empty: { textAlign: 'center', color: muted, padding: '40px 16px', background: '#fff', border: `1px dashed ${border}`, borderRadius: 14 },
+    empty: { textAlign: 'center', color: muted, padding: '40px 16px', margin: '0 0 16px' },
 
-    card: { background: '#fff', border: `1px solid ${border}`, borderRadius: 14, padding: 20, marginBottom: 16, boxShadow: '0 1px 2px rgba(16,42,67,.05)', scrollMarginTop: 96 },
-    cardFocused: { borderColor: teal, boxShadow: `0 0 0 3px ${teal}33` },
-    singleBar: {
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16,
-      padding: '10px 16px', borderRadius: 10, background: '#eef5f2', border: `1px solid ${border}`, fontSize: 13.5, color: ink,
-    },
-    cardTop: { display: 'flex', alignItems: 'flex-start', gap: 12 },
-    typeIcon: {
-      width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-      background: `${teal}14`, color: teal,
-    },
+    card: { marginBottom: 16, scrollMarginTop: 96 },
+    cardFocused: { outline: `2px solid ${teal}` },
+    cardBody: { padding: '4px 16px 16px' },
+    singleBar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, margin: '0 0 16px' },
+    cardTop: { display: 'flex', alignItems: 'center', gap: 12 },
     pinActive: { color: teal },
     cardMain: { flex: 1, minWidth: 0 },
     titleRow: { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
-    cardTitle: { fontSize: 17, fontWeight: 800, color: ink, margin: 0 },
+    cardTitle: { fontSize: 16, fontWeight: 500, color: 'inherit', margin: 0 },
     badge: { fontSize: 11, fontWeight: 800, borderRadius: 6, padding: '2px 8px', letterSpacing: 0.3 },
     badge_published: { color: '#1b5e20', background: '#e3f4e6' },
     badge_pending: { color: '#8a5a00', background: '#fef3c7' },
@@ -178,7 +145,7 @@ const useStyles = makeStyles((theme) => {
     dot: { color: '#c3cec8' },
     actions: { display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 },
     body: {
-      color: '#25322c', fontSize: 14.5, lineHeight: 1.6, margin: '12px 0 0', maxWidth: 760,
+      color: '#25322c', fontSize: 14.5, lineHeight: 1.6, margin: '12px 0 0',
       '& p': { margin: '0 0 8px' },
       '& h2': { fontSize: 19, fontWeight: 800, margin: '4px 0 8px' },
       '& h3': { fontSize: 16.5, fontWeight: 800, margin: '4px 0 8px' },
@@ -195,12 +162,10 @@ const useStyles = makeStyles((theme) => {
       display: 'block', height: 96, maxWidth: 200, objectFit: 'cover', borderRadius: 4,
       border: `1px solid ${border}`, cursor: 'zoom-in',
     },
-    cardFooter: { display: 'flex', alignItems: 'center', gap: 16, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${border}`, color: muted, fontSize: 13 },
-    footerItem: { display: 'inline-flex', alignItems: 'center', gap: 6 },
+    cardFooter: { marginTop: 14 },
     menuIcon: { marginRight: 12, color: muted },
     delHover: { '&:hover': { color: '#c0392b', background: 'rgba(192,57,43,.08)' } },
 
-    // ---- attachments (composer + card) ----
     staged: { display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 12 },
     attachHeader: { display: 'flex', alignItems: 'center', gap: 6, color: muted, fontWeight: 800, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', margin: '16px 0 10px' },
     attachList: { display: 'flex', flexWrap: 'wrap', gap: 10 },
@@ -263,14 +228,13 @@ function AttachmentCard({
 
 function PostCard({ ctx, post }) {
   const {
-    classes, fm, fmv, canManage, canPublish, onPin, onEdit, onDelete, onDeleteAttachment, onSubmitForApproval,
+    classes, fm, fmv, canManage, canPublish, onPin, onEdit, onDelete, onSubmitForApproval,
     focusUuid,
   } = ctx;
   const attachments = post.attachments || [];
   const focused = !!focusUuid && post.uuid === focusUuid;
   const [expanded, setExpanded] = useState(focused);
   const [menuAnchor, setMenuAnchor] = useState(null);
-  const Icon = TYPE_ICONS[post.postType] || TYPE_ICONS.ANNOUNCEMENT;
   const published = post.isPublished;
   const state = postState(post);
   const images = useMemo(() => bodyImages(post.body), [post.body]);
@@ -283,11 +247,8 @@ function PostCard({ ctx, post }) {
   };
 
   return (
-    <Paper elevation={0} id={`post-${post.uuid}`} className={`${classes.card} ${focused ? classes.cardFocused : ''}`}>
-      <div className={classes.cardTop}>
-        <span className={classes.typeIcon}>
-          <Icon style={{ fontSize: 20 }} />
-        </span>
+    <Paper id={`post-${post.uuid}`} className={`${classes.card} ${focused ? classes.cardFocused : ''}`}>
+      <div className={`${classes.tableTitle} ${classes.cardTop}`}>
         <div className={classes.cardMain}>
           <div className={classes.titleRow}>
             <h3 className={classes.cardTitle}>{post.title}</h3>
@@ -349,67 +310,68 @@ function PostCard({ ctx, post }) {
           </div>
         )}
       </div>
-
-      {post.rejectionReason && (
-        <div className={classes.rejection}>
-          <div className={classes.rejectionLabel}>
-            {fm('communications.post.rejectionReason')}
+      <Divider />
+      <div className={classes.cardBody}>
+        {post.rejectionReason && (
+          <div className={classes.rejection}>
+            <div className={classes.rejectionLabel}>
+              {fm('communications.post.rejectionReason')}
+            </div>
+            <div className={classes.rejectionText}>
+              {post.rejectionReason}
+            </div>
           </div>
-          <div className={classes.rejectionText}>
-            {post.rejectionReason}
-          </div>
-        </div>
-      )}
+        )}
 
-      {post.body && (
-        <>
-          {collapsed && excerptText && <RichText html={excerpt} className={`${classes.body} ${classes.bodyClamp}`} />}
-          {collapsed && images.length > 0 && (
-            <div className={classes.thumbs}>
-              {images.map((src) => (
-                <a key={src} href={src} target="_blank" rel="noopener noreferrer" aria-label={fm('communications.post.openImage')}>
-                  <img src={src} alt="" className={classes.thumb} />
-                </a>
+        {post.body && (
+          <>
+            {collapsed && excerptText && <RichText html={excerpt} className={`${classes.body} ${classes.bodyClamp}`} />}
+            {collapsed && images.length > 0 && (
+              <div className={classes.thumbs}>
+                {images.map((src) => (
+                  <a key={src} href={src} target="_blank" rel="noopener noreferrer" aria-label={fm('communications.post.openImage')}>
+                    <img src={src} alt="" className={classes.thumb} />
+                  </a>
+                ))}
+              </div>
+            )}
+            {!collapsed && (
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+              <div onClick={openImage}>
+                <RichText html={post.body} className={classes.body} />
+              </div>
+            )}
+            {long && (
+              <button type="button" className={classes.linkBtn} style={{ display: 'block', marginTop: 8 }} onClick={() => setExpanded((v) => !v)}>
+                {fm(expanded ? 'communications.readLess' : 'communications.readMore')}
+              </button>
+            )}
+          </>
+        )}
+
+        {attachments.length > 0 && (
+          <>
+            <div className={classes.attachHeader}>
+              <AttachFileOutlined style={{ fontSize: 13 }} />
+              {fmv('communications.post.attachmentCount', { count: attachments.length })}
+            </div>
+            <div className={classes.attachList}>
+              {attachments.map((a) => (
+                <AttachmentCard
+                  key={a.uuid || a.id} classes={classes} fm={fm} att={a}
+                  onDelete={null}
+                />
               ))}
             </div>
-          )}
-          {!collapsed && (
-            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-            <div onClick={openImage}>
-              <RichText html={post.body} className={classes.body} />
-            </div>
-          )}
-          {long && (
-            <button type="button" className={classes.linkBtn} style={{ display: 'block', marginTop: 8 }} onClick={() => setExpanded((v) => !v)}>
-              {fm(expanded ? 'communications.readLess' : 'communications.readMore')}
-            </button>
-          )}
-        </>
-      )}
+          </>
+        )}
 
-      {attachments.length > 0 && (
-        <>
-          <div className={classes.attachHeader}>
-            <AttachFileOutlined style={{ fontSize: 13 }} />
-            {fmv('communications.post.attachmentCount', { count: attachments.length })}
-          </div>
-          <div className={classes.attachList}>
-            {attachments.map((a) => (
-              <AttachmentCard
-                key={a.uuid || a.id} classes={classes} fm={fm} att={a}
-                onDelete={canManage ? onDeleteAttachment : null}
-              />
-            ))}
-          </div>
-        </>
-      )}
-
-      <div className={classes.cardFooter}>
-        <span className={classes.footerItem}><PeopleOutline style={{ fontSize: 16 }} />{fm('communications.audience.allStaff')}</span>
         {!published && canManage && !canPublish && onSubmitForApproval && (
-          <button type="button" className={classes.btnGhost} onClick={() => onSubmitForApproval(post)}>
-            {fm('communications.post.submitForApproval')}
-          </button>
+          <div className={classes.cardFooter}>
+            <Button variant="outlined" color="primary" size="small" onClick={() => onSubmitForApproval(post)}>
+              {fm('communications.post.submitForApproval')}
+            </Button>
+          </div>
         )}
       </div>
     </Paper>
@@ -589,6 +551,7 @@ function FeedPage({ match }) {
     dispatch(savePost(draft, fm('communications.post.add')));
     resetDraft();
   };
+  const editingAttachments = draft.id ? ((posts || []).find((p) => p.id === draft.id)?.attachments || []) : [];
   const startEdit = (p) => {
     setDraft({
       id: p.id, title: p.title || '', body: p.body || '', postType: p.postType, isPinned: p.isPinned, files: [],
@@ -608,12 +571,6 @@ function FeedPage({ match }) {
   const delAttachment = (att) => dispatch(deletePostAttachment({ id: att.uuid }, fm('communications.attachment.delete')));
   const submitForApproval = (p) => dispatch(submitPostForApproval(p.id, fm('communications.post.submitForApproval')));
 
-  const counts = useMemo(() => {
-    const list = posts || [];
-    const c = { ALL: list.length };
-    TYPES.forEach((t) => { c[t] = list.filter((p) => p.postType === t).length; });
-    return c;
-  }, [posts]);
   const awaiting = (posts || []).filter((p) => postState(p) === 'pending').length;
 
   const visible = useMemo(() => {
@@ -629,11 +586,9 @@ function FeedPage({ match }) {
   const recent = visible.filter((p) => !p.isPinned);
 
   const cardCtx = {
-    classes, fm, fmv, canManage, canPublish, onPin: togglePin, onEdit: startEdit, onDelete: del, onDeleteAttachment: delAttachment, onSubmitForApproval: submitForApproval,
+    classes, fm, fmv, canManage, canPublish, onPin: togglePin, onEdit: startEdit, onDelete: del, onSubmitForApproval: submitForApproval,
     focusUuid,
   };
-
-  const segments = [['ALL', fm('communications.filter.all')], ...TYPES.map((t) => [t, fm(`communications.postType.${t}`)])];
 
   return (
     <div className={classes.page}>
@@ -733,6 +688,13 @@ function FeedPage({ match }) {
               <Button startIcon={<AttachFileOutlined />} onClick={() => fileInputRef.current?.click()}>
                 {fm('communications.composer.attachFiles')}
               </Button>
+              {editingAttachments.length > 0 && (
+                <div className={classes.staged}>
+                  {editingAttachments.map((a) => (
+                    <AttachmentCard key={a.uuid || a.id} classes={classes} fm={fm} att={a} onDelete={delAttachment} />
+                  ))}
+                </div>
+              )}
               {(draft.files || []).length > 0 && (
                 <div className={classes.staged}>
                   {draft.files.map((f, idx) => {
@@ -783,40 +745,43 @@ function FeedPage({ match }) {
         </Paper>
       )}
 
-      <div className={classes.filterBar}>
-        <div className={classes.segment} role="tablist" aria-label={fm('communications.filter.all')}>
-          {segments.map(([key, label]) => {
-            const active = filter === key;
-            return (
-              <button
-                key={key} type="button" role="tab" aria-selected={active}
-                className={`${classes.segBtn} ${active ? classes.segBtnActive : ''}`}
-                onClick={() => setFilter(key)}
-              >
-                {label}
-                <span className={`${classes.segCount} ${active ? classes.segCountActive : ''}`}>{counts[key] ?? 0}</span>
-              </button>
-            );
-          })}
-        </div>
-        <div className={classes.search}>
-          <SearchOutlined style={{ fontSize: 18, color: '#5c6e64' }} />
-          <input
-            className={classes.searchInput} value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder={searchLabel} aria-label={searchLabel}
-          />
-        </div>
-      </div>
+      <SearcherPane
+        module={MODULE_NAME}
+        reset={() => { setFilter('ALL'); setSearch(''); }}
+        refresh={refetch}
+        filterPane={(
+          <Grid container className={classes.filterForm}>
+            <Grid item xs={3} className={classes.filterItem}>
+              <PostTypePicker
+                withLabel
+                withNull
+                nullLabel="communications.filter.all"
+                value={filter === 'ALL' ? null : filter}
+                onChange={(v) => setFilter(v || 'ALL')}
+              />
+            </Grid>
+            <Grid item xs={6} className={classes.filterItem}>
+              <TextField
+                fullWidth
+                label={searchLabel}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                InputLabelProps={{ className: classes.filterLabel }}
+              />
+            </Grid>
+          </Grid>
+        )}
+      />
 
       <ProgressOrError progress={fetching} error={error} />
 
       {!fetching && !error && (
-        <>
+        <div className={classes.feedList}>
           {singleView && (
-            <div className={classes.singleBar}>
-              <span>{fm('communications.feed.singlePost')}</span>
-              <button type="button" className={classes.btnGhost} onClick={showAll}>{fm('communications.feed.showAll')}</button>
-            </div>
+            <Paper className={`${classes.paper} ${classes.item} ${classes.singleBar}`}>
+              <Typography variant="body2">{fm('communications.feed.singlePost')}</Typography>
+              <Button color="primary" onClick={showAll}>{fm('communications.feed.showAll')}</Button>
+            </Paper>
           )}
           {pinned.length > 0 && (
             <>
@@ -826,12 +791,14 @@ function FeedPage({ match }) {
           )}
           {recent.length > 0 && (
             <>
-              <div className={classes.sectionHead}><ScheduleOutlined style={{ fontSize: 15 }} />{fm('communications.section.recent')}</div>
+              {pinned.length > 0 && (
+                <div className={classes.sectionHead}><ScheduleOutlined style={{ fontSize: 15 }} />{fm('communications.section.recent')}</div>
+              )}
               {recent.map((p) => <PostCard key={p.id} ctx={cardCtx} post={p} />)}
             </>
           )}
-          {visible.length === 0 && <div className={classes.empty}>{fm('communications.empty')}</div>}
-        </>
+          {visible.length === 0 && <Paper className={`${classes.paper} ${classes.empty}`}>{fm('communications.empty')}</Paper>}
+        </div>
       )}
     </div>
   );
