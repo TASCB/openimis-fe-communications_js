@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import { useIntl } from 'react-intl';
 import {
-  Paper, IconButton, Tooltip, CircularProgress,
+  Paper, IconButton, Tooltip, CircularProgress, Grid, Button, Divider, Typography,
 } from '@material-ui/core';
 import VolumeUpOutlined from '@material-ui/icons/VolumeUpOutlined';
 import FlashOnOutlined from '@material-ui/icons/FlashOnOutlined';
@@ -25,7 +25,7 @@ import GetAppOutlined from '@material-ui/icons/GetAppOutlined';
 import Close from '@material-ui/icons/Close';
 import {
   Helmet, useTranslations, useModulesManager, useHistory, journalize, ProgressOrError,
-  formatMessageWithValues, baseApiUrl,
+  formatMessageWithValues, baseApiUrl, TextInput,
 } from '@openimis/fe-core';
 import {
   MODULE_NAME, RIGHT_POST_MANAGE, RIGHT_POST_PUBLISH, COMMS_ROUTE_FEED,
@@ -36,6 +36,7 @@ import {
 } from '../actions';
 import RichTextEditor from '../components/RichTextEditor';
 import TemplatePicker from '../components/TemplatePicker';
+import { PostTypePicker } from '../pickers/ConstantPickers';
 import RichText from '../components/RichText';
 import { htmlToText } from '../components/htmlSanitize';
 import { parseDate, relTime } from '../utils/dates';
@@ -47,7 +48,6 @@ const TYPE_META = {
   MEDIA_HIGHLIGHT: { color: '#4f46e5', Icon: PermMediaOutlined },
   NEWSLETTER: { color: '#475569', Icon: EmailOutlined },
 };
-const AUDIENCES = ['allStaff', 'regional', 'ict'];
 const MAX_LEN = 1200;
 const postAttachmentUrl = (att, inline) => `${baseApiUrl}/communications/post-attachments/${att.uuid}/download/${inline ? '?inline=1' : ''}`;
 
@@ -80,6 +80,12 @@ const useStyles = makeStyles((theme) => {
   const ink = '#152219';
   return {
     page: { ...theme.page, width: '100%' },
+    paper: theme.paper.paper,
+    tableTitle: theme.table.title,
+    item: theme.paper.item,
+    composer: { marginBottom: 24 },
+    composerFooter: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' },
+    fieldCaption: { display: 'block', color: teal, fontSize: '0.75rem', marginBottom: 8 },
 
     header: { display: 'flex', alignItems: 'flex-start', gap: 16, margin: '4px 0 20px', flexWrap: 'wrap' },
     headerText: { flex: 1, minWidth: 240 },
@@ -91,57 +97,23 @@ const useStyles = makeStyles((theme) => {
       padding: '8px 16px', fontSize: 13.5, fontWeight: 700, color: ink, whiteSpace: 'nowrap',
     },
 
-    composer: { border: `1px solid ${border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 24, background: '#fff' },
-    composerHead: { display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: '#eef5f2', borderBottom: `1px solid ${border}` },
-    avatar: {
-      width: 38, height: 38, borderRadius: 19, background: teal, color: '#fff', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, flexShrink: 0,
+    composerPrompt: {
+      flex: 1, textAlign: 'left', background: 'none', border: 0, borderBottom: '1px solid rgba(0,0,0,.42)',
+      width: '100%', padding: '8px 0', fontSize: 15, color: muted, cursor: 'text', fontFamily: 'inherit',
+      '&:hover': { borderBottomColor: ink },
+      '&:focus-visible': { outline: 'none', borderBottom: `2px solid ${teal}` },
     },
-    composerTitle: { fontWeight: 800, color: ink, fontSize: 15, lineHeight: 1.2 },
-    postingAs: { color: muted, fontSize: 13 },
-    composerBody: { padding: 20 },
-    fieldLabel: { display: 'block', fontSize: 11.5, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: muted, margin: '0 0 8px' },
-    fieldGroup: { marginBottom: 18 },
-    filled: {
-      width: '100%', background: '#f6f9f7', border: `1px solid ${border}`, borderRadius: 10, padding: '12px 14px',
-      fontSize: 15, color: ink, fontFamily: 'inherit', transition: 'border-color .15s, box-shadow .15s',
-      '&::placeholder': { color: '#9aa8a0' },
-      '&:hover': { borderColor: '#c9d4cd' },
-      '&:focus': { outline: 'none', borderColor: teal, background: '#fff', boxShadow: `0 0 0 3px ${teal}26` },
-    },
+    templateNote: { color: muted, fontSize: 13, marginTop: 6 },
 
-    chips: { display: 'flex', flexWrap: 'wrap', gap: 10 },
-    chip: {
-      display: 'inline-flex', alignItems: 'center', gap: 7, borderRadius: 999, padding: '8px 14px', cursor: 'pointer',
-      border: `1px solid ${border}`, background: '#fff', color: ink, fontSize: 13.5, fontWeight: 700,
-      transition: 'background .15s, color .15s, border-color .15s',
-      '&:focus-visible': { outline: 'none', boxShadow: `0 0 0 3px ${teal}40` },
-    },
-    chipIcon: { fontSize: 17 },
     counter: { color: muted, fontSize: 12.5, fontWeight: 600 },
     counterOver: { color: '#c0392b' },
 
-    composerFooter: {
-      display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'space-between',
-      padding: '14px 20px', borderTop: `1px solid ${border}`, background: '#fafcfb',
-    },
-    visibleWrap: { display: 'flex', alignItems: 'center', gap: 8, border: `1px solid ${border}`, borderRadius: 10, padding: '6px 12px', background: '#fff' },
-    visibleLabel: { color: muted, fontSize: 13 },
-    select: { border: 'none', background: 'none', outline: 'none', fontSize: 14, fontWeight: 700, color: ink, cursor: 'pointer' },
-    footerActions: { display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' },
-    editingBanner: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: teal, fontWeight: 700, marginRight: 4 },
+    footerHint: { color: muted, fontSize: 13 },
     btnGhost: {
       background: '#fff', color: teal, border: `1px solid ${teal}`, borderRadius: 10, padding: '11px 18px',
       fontSize: 14.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
       '&:hover': { background: `${teal}0d` },
       '&:focus-visible': { outline: 'none', boxShadow: `0 0 0 3px ${teal}40` },
-    },
-    btnPrimary: {
-      display: 'inline-flex', alignItems: 'center', gap: 8, background: teal, color: '#fff', border: 0, borderRadius: 10,
-      padding: '11px 20px', fontSize: 14.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', transition: 'background .15s',
-      '&:hover': { background: '#01515f' },
-      '&:focus-visible': { outline: 'none', boxShadow: `0 0 0 3px ${teal}55` },
-      '&:disabled': { background: '#b9c6c0', cursor: 'default' },
     },
     linkBtn: {
       background: 'none', border: 0, color: teal, fontWeight: 700, fontSize: 13, cursor: 'pointer', padding: 0, fontFamily: 'inherit',
@@ -198,13 +170,6 @@ const useStyles = makeStyles((theme) => {
     delHover: { '&:hover': { color: '#c0392b', background: 'rgba(192,57,43,.08)' } },
 
     // ---- attachments (composer + card) ----
-    attachBtn: {
-      display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', color: teal,
-      border: `1px solid ${teal}`, borderRadius: 10, padding: '9px 16px', fontSize: 14, fontWeight: 800,
-      cursor: 'pointer', fontFamily: 'inherit', transition: 'background .15s',
-      '&:hover': { background: `${teal}0d` },
-      '&:focus-visible': { outline: 'none', boxShadow: `0 0 0 3px ${teal}40` },
-    },
     staged: { display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 12 },
     attachHeader: { display: 'inline-flex', alignItems: 'center', gap: 6, color: muted, fontWeight: 800, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', margin: '16px 0 10px' },
     attachList: { display: 'flex', flexWrap: 'wrap', gap: 10 },
@@ -369,7 +334,6 @@ function PostCard({ ctx, post }) {
       )}
 
       <div className={classes.cardFooter}>
-        {/* No per-post audience field: "All staff" is the truthful default. View counts omitted (no field). */}
         <span className={classes.footerItem}><PeopleOutline style={{ fontSize: 16 }} />{fm('communications.audience.allStaff')}</span>
         {!published && canManage && !canPublish && onSubmitForApproval && (
           <button type="button" className={classes.btnGhost} onClick={() => onSubmitForApproval(post)}>
@@ -405,19 +369,20 @@ function FeedPage({ match }) {
   const userName = user?.i_user?.other_names
     ? `${user.i_user.other_names} ${user.i_user.last_name || ''}`.trim()
     : (user?.i_user?.login_name || user?.login_name || 'User');
-  const initial = (userName[0] || 'U').toUpperCase();
 
-  const emptyDraft = { id: null, title: '', body: '', postType: 'ANNOUNCEMENT', audience: 'allStaff', files: [] };
+  const emptyDraft = { id: null, title: '', body: '', postType: 'ANNOUNCEMENT', files: [] };
   const [draft, setDraft] = useState(emptyDraft);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [template, setTemplate] = useState(null);
+  const [templateUndo, setTemplateUndo] = useState(null);
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const prev = useRef();
   const fileInputRef = useRef(null);
-  // After a save lands, upload staged files to the resolved post, then publish if requested.
-  const pending = useRef(null); // { id?, title, publish, files: [File] }
+  const titleRef = useRef(null);
+  const pending = useRef(null);
 
   const focusUuid = match?.params?.post_uuid;
-  // A deep link to a post older than the first 100 loads that post alone.
   const [singleView, setSingleView] = useState(false);
   const scrolledTo = useRef(null);
 
@@ -457,7 +422,7 @@ function FeedPage({ match }) {
       ? list.find((p) => p.id === intent.id)
       : list.filter((p) => p.title === intent.title)
         .sort((a, b) => parseDate(b.dateCreated) - parseDate(a.dateCreated))[0];
-    if (!target) return; // wait until the saved post appears in the refetch
+    if (!target) return;
     pending.current = null;
     (async () => {
       const files = intent.files || [];
@@ -468,7 +433,7 @@ function FeedPage({ match }) {
       if (intent.publish && !target.isPublished) {
         dispatch(setPostPublished(target, true, fm('communications.post.publish')));
       } else if (files.length) {
-        refetch(); // surface the freshly uploaded attachments
+        refetch();
       }
     })();
   }, [posts, fetching]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -476,16 +441,43 @@ function FeedPage({ match }) {
   const bodyLen = htmlToText(draft.body).length;
   const hasBody = bodyLen > 0 || /<img[\s>]/i.test(draft.body || '');
   const valid = draft.title.trim() && hasBody && bodyLen <= MAX_LEN;
-  const resetDraft = () => setDraft(emptyDraft);
-  // A template seeds an empty composer. Anything already typed wins — silently replacing a
-  // half-written post would be the worst possible moment to be helpful.
+  const blocker = () => {
+    if (!draft.title.trim()) return fm('communications.composer.needTitle');
+    if (!canPublish) return null;
+    if (!hasBody) return fm('communications.composer.needMessage');
+    if (bodyLen > MAX_LEN) return fmv('communications.composer.tooLong', { max: MAX_LEN });
+    return null;
+  };
+  const resetDraft = () => {
+    setDraft(emptyDraft);
+    setComposerOpen(false);
+    setTemplate(null);
+    setTemplateUndo(null);
+  };
+  const hasDraft = !!(draft.title.trim() || hasBody || (draft.files || []).length);
+  const open = composerOpen || !!draft.id;
+  const openComposer = () => {
+    setComposerOpen(true);
+    setTimeout(() => titleRef.current?.focus(), 0);
+  };
   const applyTemplate = (t) => {
-    if (!t) return;
+    if (!t) {
+      setTemplate(null);
+      setTemplateUndo(null);
+      return;
+    }
+    setTemplateUndo({ title: draft.title, body: draft.body });
+    setTemplate(t);
     setDraft((d) => ({
       ...d,
       title: d.title.trim() ? d.title : (t.subject || t.name || ''),
       body: htmlToText(d.body || '').length ? d.body : (t.body || ''),
     }));
+  };
+  const undoTemplate = () => {
+    setDraft((d) => ({ ...d, title: templateUndo.title, body: templateUndo.body }));
+    setTemplate(null);
+    setTemplateUndo(null);
   };
 
   const uploadInlineImage = async (file) => {
@@ -511,7 +503,7 @@ function FeedPage({ match }) {
   };
   const startEdit = (p) => {
     setDraft({
-      id: p.id, title: p.title || '', body: p.body || '', postType: p.postType, audience: 'allStaff', isPinned: p.isPinned, files: [],
+      id: p.id, title: p.title || '', body: p.body || '', postType: p.postType, isPinned: p.isPinned, files: [],
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -569,54 +561,55 @@ function FeedPage({ match }) {
         <span className={classes.pill}>{fmv('communications.feed.counts', { published, draft: drafts })}</span>
       </div>
 
-      {canManage && (
-        <div className={classes.composer}>
-          <div className={classes.composerHead}>
-            <span className={classes.avatar}>{initial}</span>
-            <div>
-              <div className={classes.composerTitle}>{fm('communications.composer.title')}</div>
-              <div className={classes.postingAs}>{fmv('communications.composer.postingAs', { name: userName })}</div>
-            </div>
+      {canManage && !open && (
+        <Paper className={`${classes.paper} ${classes.composer}`}>
+          <div className={classes.item}>
+            <button type="button" className={classes.composerPrompt} onClick={openComposer}>
+              {fm(hasDraft ? 'communications.composer.continue' : 'communications.composer.prompt')}
+            </button>
           </div>
-          <div className={classes.composerBody}>
-            <div className={classes.fieldGroup}>
-              <span className={classes.fieldLabel}>{fm('communications.composer.fromTemplate')}</span>
-              <TemplatePicker value={null} onChange={applyTemplate} />
-            </div>
+        </Paper>
+      )}
 
-            <div className={classes.fieldGroup}>
-              <label className={classes.fieldLabel} htmlFor="cf-title">{fm('communications.post.title')}</label>
-              <input
-                id="cf-title" className={classes.filled} value={draft.title}
-                onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+      {canManage && open && (
+        <Paper className={`${classes.paper} ${classes.composer}`}>
+          <Grid container className={classes.tableTitle} justifyContent="space-between" alignItems="center">
+            <Grid item><Typography>{fm('communications.composer.title')}</Typography></Grid>
+            <Grid item><Typography variant="caption">{fmv('communications.composer.postingAs', { name: userName })}</Typography></Grid>
+          </Grid>
+          <Divider />
+          <Grid container className={classes.item}>
+            <Grid item xs={12} md={4} className={classes.item}>
+              <TemplatePicker value={template} label={fm('communications.composer.fromTemplate')} onChange={applyTemplate} />
+              {templateUndo && (
+                <div className={classes.templateNote}>
+                  {fm('communications.composer.templateApplied')}
+                  {' · '}
+                  <button type="button" className={classes.linkBtn} onClick={undoTemplate}>{fm('communications.composer.undo')}</button>
+                </div>
+              )}
+            </Grid>
+            <Grid item xs={12} md={5} className={classes.item}>
+              <TextInput
+                module={MODULE_NAME}
+                label="communications.post.title"
+                required
+                inputRef={titleRef}
+                value={draft.title}
                 placeholder={fm('communications.composer.titlePlaceholder')}
+                onChange={(v) => setDraft((d) => ({ ...d, title: v }))}
               />
-            </div>
-
-            <div className={classes.fieldGroup}>
-              <span className={classes.fieldLabel}>{fm('communications.postType')}</span>
-              <div className={classes.chips} role="radiogroup" aria-label={fm('communications.postType')}>
-                {TYPES.map((t) => {
-                  const m = TYPE_META[t];
-                  const active = draft.postType === t;
-                  const M = m.Icon;
-                  return (
-                    <button
-                      key={t} type="button" role="radio" aria-checked={active}
-                      className={classes.chip}
-                      style={active ? { background: m.color, color: '#fff', borderColor: m.color } : undefined}
-                      onClick={() => setDraft({ ...draft, postType: t })}
-                    >
-                      <M className={classes.chipIcon} style={{ color: active ? '#fff' : m.color }} />
-                      {fm(`communications.postType.${t}`)}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className={classes.fieldGroup}>
-              <span className={classes.fieldLabel}>{fm('communications.post.body')}</span>
+            </Grid>
+            <Grid item xs={12} md={3} className={classes.item}>
+              <PostTypePicker
+                withLabel
+                required
+                value={draft.postType}
+                onChange={(v) => setDraft((d) => ({ ...d, postType: v || 'ANNOUNCEMENT' }))}
+              />
+            </Grid>
+            <Grid item xs={12} className={classes.item}>
+              <span className={classes.fieldCaption}>{fm('communications.post.body')}</span>
               <RichTextEditor
                 value={draft.body}
                 onChange={(html) => setDraft((d) => ({ ...d, body: html }))}
@@ -632,18 +625,16 @@ function FeedPage({ match }) {
                   {MAX_LEN}
                 </span>
               </div>
-            </div>
-
-            <div className={classes.fieldGroup} style={{ marginBottom: 0 }}>
-              <span className={classes.fieldLabel}>{fm('communications.composer.attachments')}</span>
+            </Grid>
+            <Grid item xs={12} className={classes.item}>
+              <span className={classes.fieldCaption}>{fm('communications.composer.attachments')}</span>
               <input
                 ref={fileInputRef} type="file" multiple style={{ display: 'none' }}
                 onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }}
               />
-              <button type="button" className={classes.attachBtn} onClick={() => fileInputRef.current?.click()}>
-                <AttachFileOutlined style={{ fontSize: 17 }} />
+              <Button startIcon={<AttachFileOutlined />} onClick={() => fileInputRef.current?.click()}>
                 {fm('communications.composer.attachFiles')}
-              </button>
+              </Button>
               {(draft.files || []).length > 0 && (
                 <div className={classes.staged}>
                   {draft.files.map((f, idx) => {
@@ -667,42 +658,31 @@ function FeedPage({ match }) {
                   })}
                 </div>
               )}
-            </div>
-          </div>
-
-          <div className={classes.composerFooter}>
-            {/* Visible-to is UI-only (no backend audience field yet). */}
-            <div className={classes.visibleWrap}>
-              <PeopleOutline style={{ fontSize: 18, color: '#5c6e64' }} />
-              <span className={classes.visibleLabel}>{fm('communications.composer.visibleTo')}</span>
-              <select
-                className={classes.select} value={draft.audience}
-                aria-label={fm('communications.composer.visibleTo')}
-                onChange={(e) => setDraft({ ...draft, audience: e.target.value })}
+            </Grid>
+          </Grid>
+          <Divider />
+          <div className={`${classes.item} ${classes.composerFooter}`}>
+            {blocker() && <span className={classes.footerHint} role="status">{blocker()}</span>}
+            {draft.id && <span className={classes.footerHint}>{fm('communications.composer.editingBanner')}</span>}
+            <Button onClick={draft.id ? resetDraft : () => setComposerOpen(false)}>
+              {fm(draft.id ? 'communications.composer.cancelEdit' : 'communications.composer.close')}
+            </Button>
+            <Button onClick={saveDraft} disabled={!draft.title.trim()}>
+              {fm('communications.composer.saveDraft')}
+            </Button>
+            {canPublish && (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={publish}
+                disabled={!valid || submitting}
+                startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <Send />}
               >
-                {AUDIENCES.map((a) => <option key={a} value={a}>{fm(`communications.audience.${a}`)}</option>)}
-              </select>
-            </div>
-            <div className={classes.footerActions}>
-              {draft.id && (
-                <span className={classes.editingBanner}>
-                  <EditOutlined style={{ fontSize: 15 }} />
-                  {fm('communications.composer.editingBanner')}
-                  <button type="button" className={classes.linkBtn} onClick={resetDraft}>{fm('communications.composer.cancelEdit')}</button>
-                </span>
-              )}
-              <button type="button" className={classes.btnGhost} onClick={saveDraft} disabled={!draft.title.trim()}>
-                {fm('communications.composer.saveDraft')}
-              </button>
-              {canPublish && (
-                <button type="button" className={classes.btnPrimary} onClick={publish} disabled={!valid || submitting}>
-                  {submitting ? <CircularProgress size={16} style={{ color: '#fff' }} /> : <Send style={{ fontSize: 17 }} />}
-                  {fm('communications.post.publish')}
-                </button>
-              )}
-            </div>
+                {fm('communications.post.publish')}
+              </Button>
+            )}
           </div>
-        </div>
+        </Paper>
       )}
 
       <div className={classes.filterBar}>
