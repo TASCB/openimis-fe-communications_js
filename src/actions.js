@@ -253,7 +253,9 @@ export const deleteFeedback = (f, label) => childDelete('deleteActivityFeedback'
 
 export const deleteAttachment = (a, label) => childDelete('deleteActivityAttachment', a, label);
 function uploadFile(path, form) {
-  return fetch(`${baseApiUrl}${path}`, { method: 'POST', body: form, credentials: 'include' }).then((r) => r.json());
+  return fetch(`${baseApiUrl}${path}`, { method: 'POST', body: form, credentials: 'include' })
+    .then((r) => r.json().catch(() => ({ success: false, error: `HTTP ${r.status}` })))
+    .catch((e) => ({ success: false, error: e.message }));
 }
 export function uploadAttachment({ activityId, file, description }) {
   const f = new FormData();
