@@ -14,7 +14,9 @@ import {
   fetchActivityChannels, saveActivityChannel, deleteActivityChannel, dispatchActivityChannel,
 } from '../actions';
 import ChannelPicker from '../pickers/ChannelPicker';
-import { RIGHT_DISPATCH } from '../constants';
+import { RIGHT_DISPATCH, ACTIVITY_STATUS } from '../constants';
+
+const MARK_SENT_STATUSES = [ACTIVITY_STATUS.SCHEDULED, ACTIVITY_STATUS.ONGOING, ACTIVITY_STATUS.COMPLETED];
 
 const useStyles = makeStyles((theme) => ({
   form: { padding: theme.spacing(1, 0) },
@@ -27,7 +29,7 @@ const TARGET_TYPES = ['EMAIL', 'SMS', 'SOCIAL', 'RADIO', 'TV', 'PRINT', 'WEB'];
 const targetKind = (channel) => (TARGET_TYPES.includes(channel?.channelType) ? channel.channelType : 'OTHER');
 
 function ChannelsPanel({
-  activityId, readOnly, activityChannels, submittingMutation, mutation,
+  activityId, activityStatus, readOnly, activityChannels, submittingMutation, mutation,
   fetchActivityChannels, saveActivityChannel, deleteActivityChannel, dispatchActivityChannel, journalize,
 }) {
   const classes = useStyles();
@@ -92,7 +94,7 @@ function ChannelsPanel({
               <TableCell>{c.target}</TableCell>
               <TableCell>{c.dispatchStatus ? formatMessage(`communications.dispatchStatus.${c.dispatchStatus}`) : ''}</TableCell>
               <TableCell>
-                {!readOnly && rights.includes(RIGHT_DISPATCH) && (
+                {rights.includes(RIGHT_DISPATCH) && MARK_SENT_STATUSES.includes(activityStatus) && c.dispatchStatus !== 'SENT' && (
                   <Tooltip title={formatMessage('communications.channel.dispatch')}>
                     <IconButton size="small" onClick={() => dispatchActivityChannel(c, formatMessage('communications.channel.dispatch'))}><SendIcon /></IconButton>
                   </Tooltip>

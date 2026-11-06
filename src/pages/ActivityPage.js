@@ -38,6 +38,7 @@ function ActivityPage({ activityUuid, variant }) {
   const history = useHistory();
   const { formatMessage, formatMessageWithValues } = useTranslations(MODULE_NAME, modulesManager);
   const rights = useSelector((s) => s.core.user.i_user.rights ?? []);
+  const currentUser = useSelector((s) => s.core.user);
   const activity = useSelector((s) => s.communications.activity);
   const mutation = useSelector((s) => s.communications.mutation);
   const submittingMutation = useSelector((s) => s.communications.submittingMutation);
@@ -101,8 +102,11 @@ function ActivityPage({ activityUuid, variant }) {
   const mandatoryFilled = edited?.title && edited?.startDatetime && edited?.endDatetime;
   const canSave = () => (canEditDetails || canEditOutcome) && mandatoryFilled && !hasHardConflict;
 
+  const myLogin = currentUser?.i_user?.login_name || currentUser?.login_name;
+  const ownActivity = !!myLogin && edited?.userCreated?.username === myLogin;
   const actions = (!isNew ? (STATUS_ACTIONS[edited?.status] || []) : [])
     .filter((a) => rights.includes(a.right))
+    .filter((a) => !(ownActivity && ['approve', 'reject'].includes(a.action)))
     .sort((a, b) => Number(!SECONDARY_ACTIONS.includes(a.action)) - Number(!SECONDARY_ACTIONS.includes(b.action)))
     .map((a) => ({
       onlyIfNotDirty: true,

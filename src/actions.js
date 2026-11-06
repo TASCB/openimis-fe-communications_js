@@ -323,6 +323,12 @@ export function deletePost(p, label) {
   return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_POST,
     { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName: 'deleteCommunicationPost', requestedDateTime: new Date() });
 }
+export function setPostPinned(p, pinned, label) {
+  const serviceName = pinned ? 'pinCommunicationPost' : 'unpinCommunicationPost';
+  const m = formatMutation(serviceName, str('id', p.id), label);
+  return graphqlMutation(m.payload, ACTION_TYPE.MANAGE_POST,
+    { clientMutationId: m.clientMutationId, clientMutationLabel: label, serviceName, requestedDateTime: new Date() });
+}
 export function setPostPublished(p, published, label) {
   const serviceName = published ? 'publishCommunicationPost' : 'unpublishCommunicationPost';
   const m = formatMutation(serviceName, str('id', p.id), label);

@@ -23,10 +23,10 @@ import {
   formatMessageWithValues, baseApiUrl, TextInput, coreConfirm, clearConfirm, SearcherPane,
 } from '@openimis/fe-core';
 import {
-  MODULE_NAME, RIGHT_POST_MANAGE, RIGHT_POST_PUBLISH, COMMS_ROUTE_FEED,
+  MODULE_NAME, RIGHT_POST_MANAGE, RIGHT_POST_PUBLISH, RIGHT_POST_DELETE, COMMS_ROUTE_FEED,
 } from '../constants';
 import {
-  fetchPosts, savePost, deletePost, setPostPublished,
+  fetchPosts, savePost, deletePost, setPostPublished, setPostPinned,
   uploadPostAttachment, deletePostAttachment, uploadPostInlineImage, submitPostForApproval,
 } from '../actions';
 import RichTextEditor from '../components/RichTextEditor';
@@ -228,7 +228,7 @@ function AttachmentCard({
 
 function PostCard({ ctx, post }) {
   const {
-    classes, fm, fmv, canManage, canPublish, onPin, onEdit, onDelete, onSubmitForApproval,
+    classes, fm, fmv, canManage, canPublish, canDelete, onPin, onPublish, onEdit, onDelete, onSubmitForApproval,
     focusUuid,
   } = ctx;
   const attachments = post.attachments || [];
@@ -269,7 +269,7 @@ function PostCard({ ctx, post }) {
             <span className={classes.typeTag}>{fm(`communications.postType.${post.postType}`)}</span>
           </p>
         </div>
-        {canManage && (
+        {(canManage || canPublish || canDelete) && (
           <div className={classes.actions}>
             {canPublish && (
               <Tooltip title={fm(post.isPinned ? 'communications.action.unpin' : 'communications.action.pin')}>
@@ -283,29 +283,46 @@ function PostCard({ ctx, post }) {
                 </IconButton>
               </Tooltip>
             )}
-            <Tooltip title={fm('communications.action.edit')}>
-              <IconButton size="small" aria-label={fm('communications.action.edit')} onClick={() => onEdit(post)}><EditOutlined fontSize="small" /></IconButton>
-            </Tooltip>
-            <Tooltip title={fm('communications.action.more')}>
-              <IconButton
-                size="small"
-                aria-label={fm('communications.action.more')}
-                aria-haspopup="true"
-                onClick={(e) => setMenuAnchor(e.currentTarget)}
-              >
-                <MoreVert fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            {canManage && (
+              <Tooltip title={fm('communications.action.edit')}>
+                <IconButton size="small" aria-label={fm('communications.action.edit')} onClick={() => onEdit(post)}><EditOutlined fontSize="small" /></IconButton>
+              </Tooltip>
+            )}
+            {(canPublish || canDelete) && (
+              <Tooltip title={fm('communications.action.more')}>
+                <IconButton
+                  size="small"
+                  aria-label={fm('communications.action.more')}
+                  aria-haspopup="true"
+                  onClick={(e) => setMenuAnchor(e.currentTarget)}
+                >
+                  <MoreVert fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
             <Menu anchorEl={menuAnchor} keepMounted={false} open={!!menuAnchor} onClose={() => setMenuAnchor(null)}>
-              <MenuItem
-                onClick={() => {
-                  setMenuAnchor(null);
-                  onDelete(post);
-                }}
-              >
-                <DeleteOutline fontSize="small" className={classes.menuIcon} />
-                {fm('communications.action.delete')}
-              </MenuItem>
+              {canPublish && state !== 'pending' && (
+                <MenuItem
+                  onClick={() => {
+                    setMenuAnchor(null);
+                    onPublish(post);
+                  }}
+                >
+                  <Send fontSize="small" className={classes.menuIcon} />
+                  {fm(published ? 'communications.post.unpublish' : 'communications.post.publish')}
+                </MenuItem>
+              )}
+              {canDelete && (
+                <MenuItem
+                  onClick={() => {
+                    setMenuAnchor(null);
+                    onDelete(post);
+                  }}
+                >
+                  <DeleteOutline fontSize="small" className={classes.menuIcon} />
+                  {fm('communications.action.delete')}
+                </MenuItem>
+              )}
             </Menu>
           </div>
         )}
@@ -366,7 +383,7 @@ function PostCard({ ctx, post }) {
           </>
         )}
 
-        {!published && canManage && !canPublish && onSubmitForApproval && (
+        {!published && state !== 'pending' && canManage && !canPublish && onSubmitForApproval && (
           <div className={classes.cardFooter}>
             <Button variant="outlined" color="primary" size="small" onClick={() => onSubmitForApproval(post)}>
               {fm('communications.post.submitForApproval')}
@@ -398,6 +415,7 @@ function FeedPage({ match }) {
 
   const canManage = rights.includes(RIGHT_POST_MANAGE);
   const canPublish = rights.includes(RIGHT_POST_PUBLISH);
+  const canDelete = rights.includes(RIGHT_POST_DELETE);
 
   const userName = user?.i_user?.other_names
     ? `${user.i_user.other_names} ${user.i_user.last_name || ''}`.trim()
@@ -563,9 +581,11 @@ function FeedPage({ match }) {
     if (picked.length) setDraft((d) => ({ ...d, files: [...(d.files || []), ...picked] }));
   };
   const removeStaged = (idx) => setDraft((d) => ({ ...d, files: (d.files || []).filter((_, i) => i !== idx) }));
-  const togglePin = (p) => dispatch(savePost(
-    { id: p.id, title: p.title, body: p.body, postType: p.postType, isPinned: !p.isPinned },
-    fm(p.isPinned ? 'communications.post.unpin.label' : 'communications.post.pin.label'),
+  const togglePin = (p) => dispatch(setPostPinned(
+    p, !p.isPinned, fm(p.isPinned ? 'communications.post.unpin.label' : 'communications.post.pin.label'),
+  ));
+  const togglePublished = (p) => dispatch(setPostPublished(
+    p, !p.isPublished, fm(p.isPublished ? 'communications.post.unpublish' : 'communications.post.publish'),
   ));
   const del = (p) => setToDelete(p);
   const delAttachment = (att) => dispatch(deletePostAttachment({ id: att.uuid }, fm('communications.attachment.delete')));
@@ -586,7 +606,8 @@ function FeedPage({ match }) {
   const recent = visible.filter((p) => !p.isPinned);
 
   const cardCtx = {
-    classes, fm, fmv, canManage, canPublish, onPin: togglePin, onEdit: startEdit, onDelete: del, onSubmitForApproval: submitForApproval,
+    classes, fm, fmv, canManage, canPublish, canDelete, onPin: togglePin, onPublish: togglePublished,
+    onEdit: startEdit, onDelete: del, onSubmitForApproval: submitForApproval,
     focusUuid,
   };
 

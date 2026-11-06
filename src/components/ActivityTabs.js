@@ -7,7 +7,7 @@ import {
   RIGHT_ATTACHMENT_SEARCH, RIGHT_ACTIVITY_CHANNEL_MANAGE, RIGHT_OBJECTIVE_MANAGE,
   RIGHT_AUDIENCE_MANAGE, RIGHT_ASSIGNMENT_MANAGE, RIGHT_FEEDBACK_MANAGE,
   RIGHT_ACTIVITY_UPDATE, RIGHT_MEDIA_HOUSE_SEARCH, ACTIVITY_STATUS,
-  RIGHT_PARTICIPANT_SEARCH, RIGHT_PARTICIPANT_CREATE,
+  RIGHT_PARTICIPANT_SEARCH, RIGHT_PARTICIPANT_CREATE, RIGHT_ATTACHMENT_UPLOAD,
 } from '../constants';
 import ChannelsPanel from './ChannelsPanel';
 import ObjectivesPanel from './ObjectivesPanel';
@@ -27,9 +27,9 @@ const useStyles = makeStyles((theme) => ({
   content: { padding: theme.spacing(1) },
 }));
 
-// Coverage and attendance are recorded AFTER the event, so these two tabs compute their own
-// readOnly instead of inheriting the form's Draft-only lock.
+// Results tabs stay open after the event, until Archived/Cancelled.
 const COVERAGE_LOCKED_STATUSES = [ACTIVITY_STATUS.ARCHIVED, ACTIVITY_STATUS.CANCELLED];
+const PLANNING_STATUSES = [ACTIVITY_STATUS.DRAFT, ACTIVITY_STATUS.REJECTED];
 
 function ActivityTabs({ activityId, readOnly, edited }) {
   const classes = useStyles();
@@ -40,17 +40,20 @@ function ActivityTabs({ activityId, readOnly, edited }) {
   const afterEventLocked = COVERAGE_LOCKED_STATUSES.includes(edited?.status);
   const coverageReadOnly = !rights.includes(RIGHT_ACTIVITY_UPDATE) || afterEventLocked;
   const participantsReadOnly = !rights.includes(RIGHT_PARTICIPANT_CREATE) || afterEventLocked;
+  const resultsOnly = !PLANNING_STATUSES.includes(edited?.status);
+  const resultsReadOnly = (right) => !rights.includes(right) || afterEventLocked;
+  const status = edited?.status;
 
   const tabs = useMemo(() => [
-    { key: 'channels', label: 'communications.tab.channels', ro: !rights.includes(RIGHT_ACTIVITY_CHANNEL_MANAGE), render: (ro) => <ChannelsPanel activityId={activityId} readOnly={ro} /> },
-    { key: 'objectives', label: 'communications.tab.objectives', ro: !rights.includes(RIGHT_OBJECTIVE_MANAGE), render: (ro) => <ObjectivesPanel activityId={activityId} readOnly={ro} /> },
-    { key: 'audience', label: 'communications.tab.audience', ro: !rights.includes(RIGHT_AUDIENCE_MANAGE), render: (ro) => <AudiencePanel activityId={activityId} readOnly={ro} /> },
+    { key: 'channels', label: 'communications.tab.channels', ro: !rights.includes(RIGHT_ACTIVITY_CHANNEL_MANAGE), render: (ro) => <ChannelsPanel activityId={activityId} activityStatus={status} readOnly={ro} /> },
+    { key: 'objectives', label: 'communications.tab.objectives', ownReadOnly: true, ro: resultsReadOnly(RIGHT_OBJECTIVE_MANAGE), render: (ro) => <ObjectivesPanel activityId={activityId} readOnly={ro} resultsOnly={resultsOnly} /> },
+    { key: 'audience', label: 'communications.tab.audience', ownReadOnly: true, ro: resultsReadOnly(RIGHT_AUDIENCE_MANAGE), render: (ro) => <AudiencePanel activityId={activityId} readOnly={ro} resultsOnly={resultsOnly} /> },
     ...(rights.includes(RIGHT_PARTICIPANT_SEARCH) ? [{ key: 'participants', label: 'communications.tab.participants', ownReadOnly: true, ro: participantsReadOnly, render: (ro) => <ParticipantsPanel activityId={activityId} readOnly={ro} /> }] : []),
     ...(rights.includes(RIGHT_MEDIA_HOUSE_SEARCH) ? [{ key: 'media', label: 'communications.tab.media', ownReadOnly: true, ro: coverageReadOnly, render: (ro) => <MediaPanel activityId={activityId} readOnly={ro} /> }] : []),
     { key: 'assignments', label: 'communications.tab.assignments', ro: !rights.includes(RIGHT_ASSIGNMENT_MANAGE), render: (ro) => <AssignmentsPanel activityId={activityId} edited={edited} readOnly={ro} /> },
-    ...(rights.includes(RIGHT_ATTACHMENT_SEARCH) ? [{ key: 'attachments', label: 'communications.tab.attachments', ro: false, render: (ro) => <AttachmentsPanel activityId={activityId} readOnly={ro} /> }] : []),
-    { key: 'feedback', label: 'communications.tab.feedback', ro: !rights.includes(RIGHT_FEEDBACK_MANAGE), render: (ro) => <FeedbackPanel activityId={activityId} readOnly={ro} /> },
-  ], [activityId, edited, rights, coverageReadOnly, participantsReadOnly]);
+    ...(rights.includes(RIGHT_ATTACHMENT_SEARCH) ? [{ key: 'attachments', label: 'communications.tab.attachments', ownReadOnly: true, ro: resultsReadOnly(RIGHT_ATTACHMENT_UPLOAD), render: (ro) => <AttachmentsPanel activityId={activityId} readOnly={ro} /> }] : []),
+    { key: 'feedback', label: 'communications.tab.feedback', ownReadOnly: true, ro: resultsReadOnly(RIGHT_FEEDBACK_MANAGE), render: (ro) => <FeedbackPanel activityId={activityId} readOnly={ro} /> },
+  ], [activityId, edited, rights, coverageReadOnly, participantsReadOnly, resultsOnly, afterEventLocked]);
 
   const [active, setActive] = useState(0);
   const index = Math.min(active, tabs.length - 1);

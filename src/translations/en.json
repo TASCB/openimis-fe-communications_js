@@ -124,7 +124,7 @@
   "communications.dispatchStatus.null": "Any",
   "communications.dispatchStatus.PENDING": "Pending",
   "communications.dispatchStatus.QUEUED": "Queued",
-  "communications.dispatchStatus.SENT": "Sent",
+  "communications.dispatchStatus.SENT": "Marked as sent",
   "communications.dispatchStatus.FAILED": "Failed",
   "communications.dispatchStatus.SKIPPED": "Skipped",
   "communications.role": "Role",
@@ -206,7 +206,7 @@
   "communications.channel.target.OTHER": "Target / handle",
   "communications.channel.targetHint.OTHER": "Where this channel reaches its audience",
   "communications.channel.dispatchStatus": "Dispatch",
-  "communications.channel.dispatch": "Dispatch (blast)",
+  "communications.channel.dispatch": "Mark as sent",
   "communications.channel.add": "Add channel",
   "communications.channel.delete": "Remove channel",
   "communications.channel.empty": "No channels yet.",
@@ -615,5 +615,11 @@
   "communications.medium.BLOG": "Blog",
   "communications.level.ZONAL": "Zonal",
   "communications.scope.ZONAL": "Zonal",
-  "communications.journalist.gender": "Gender"
+  "communications.journalist.gender": "Gender",
+  "communications.save": "Save",
+  "communications.cancel": "Cancel",
+  "communications.objective.update": "Update objective",
+  "communications.audience.update": "Update audience",
+  "communications.dashboard.dateFrom": "From",
+  "communications.dashboard.dateTo": "To"
 }

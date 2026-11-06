@@ -28,6 +28,7 @@ export const RIGHT_STAKEHOLDER_TYPE_MANAGE = 221302;
 export const RIGHT_AUDIENCE_MANAGE = 221402;
 export const RIGHT_POST_SEARCH = 221501;
 export const RIGHT_POST_MANAGE = 221502;
+export const RIGHT_POST_DELETE = 221504;
 export const RIGHT_POST_PUBLISH = 221505;
 export const RIGHT_MEDIA_HOUSE_SEARCH = 221601;
 export const RIGHT_MEDIA_HOUSE_CREATE = 221602;
@@ -118,9 +119,9 @@ export const STATUS_ACTIONS = {
   DRAFT: [{ action: 'submit', right: RIGHT_ACTIVITY_UPDATE }, { action: 'cancel', right: RIGHT_ACTIVITY_UPDATE }],
   SUBMITTED: [{ action: 'approve', right: RIGHT_ACTIVITY_APPROVE }, { action: 'reject', right: RIGHT_ACTIVITY_APPROVE }],
   REJECTED: [{ action: 'revise', right: RIGHT_ACTIVITY_UPDATE }],
-  APPROVED: [{ action: 'schedule', right: RIGHT_ACTIVITY_UPDATE }, { action: 'cancel', right: RIGHT_ACTIVITY_UPDATE }],
-  SCHEDULED: [{ action: 'start', right: RIGHT_ACTIVITY_UPDATE }, { action: 'cancel', right: RIGHT_ACTIVITY_UPDATE }],
-  ONGOING: [{ action: 'complete', right: RIGHT_ACTIVITY_UPDATE }, { action: 'cancel', right: RIGHT_ACTIVITY_UPDATE }],
+  APPROVED: [{ action: 'schedule', right: RIGHT_ACTIVITY_UPDATE }, { action: 'cancel', right: RIGHT_ACTIVITY_APPROVE }],
+  SCHEDULED: [{ action: 'start', right: RIGHT_ACTIVITY_UPDATE }, { action: 'cancel', right: RIGHT_ACTIVITY_APPROVE }],
+  ONGOING: [{ action: 'complete', right: RIGHT_ACTIVITY_UPDATE }, { action: 'cancel', right: RIGHT_ACTIVITY_APPROVE }],
   COMPLETED: [{ action: 'close', right: RIGHT_ACTIVITY_UPDATE }],
   CLOSED: [{ action: 'archive', right: RIGHT_ACTIVITY_UPDATE }],
   CANCELLED: [{ action: 'archive', right: RIGHT_ACTIVITY_UPDATE }],

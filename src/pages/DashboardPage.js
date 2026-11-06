@@ -3,10 +3,11 @@ import { useSelector, useDispatch } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import { Grid, Box } from '@material-ui/core';
 import {
-  Helmet, useTranslations, useModulesManager, ProgressOrError, useHistory,
+  Helmet, useTranslations, useModulesManager, ProgressOrError, useHistory, PublishedComponent,
 } from '@openimis/fe-core';
 import { MODULE_NAME } from '../constants';
-import { fetchSummary } from '../actions';
+import { fetchSummary, decId } from '../actions';
+import { toISO } from '../utils/dates';
 import DonutLargeIcon from '@material-ui/icons/DonutLarge';
 import CategoryIcon from '@material-ui/icons/Category';
 import RecordVoiceOverIcon from '@material-ui/icons/RecordVoiceOver';
@@ -37,6 +38,7 @@ const STATUS_FLOW = [
 
 const useStyles = makeStyles((theme) => ({
   page: theme.page,
+  filters: { marginBottom: theme.spacing(2) },
   cards: {
     display: 'grid',
     gap: theme.spacing(3),
@@ -55,9 +57,18 @@ function DashboardPage() {
   const fetching = useSelector((s) => s.communications.fetchingSummary);
   const error = useSelector((s) => s.communications.errorSummary);
   const [refreshedAt, setRefreshedAt] = useState(null);
+  const [filters, setFilters] = useState({ dateFrom: null, dateTo: null, location: null });
 
-  const refresh = () => { dispatch(fetchSummary({})); setRefreshedAt(new Date()); };
-  useEffect(() => { refresh(); }, []);
+  const refresh = () => {
+    dispatch(fetchSummary({
+      dateFrom: toISO(filters.dateFrom),
+      dateTo: toISO(filters.dateTo, true),
+      locationId: filters.location ? Number(decId(filters.location.id)) : null,
+    }));
+    setRefreshedAt(new Date());
+  };
+  useEffect(() => { refresh(); }, [filters]);
+  const setFilter = (key) => (v) => setFilters((f) => ({ ...f, [key]: v || null }));
 
   const t = (k) => formatMessage(k);
   const empty = t('communications.dashboard.empty');
@@ -127,6 +138,20 @@ function DashboardPage() {
         refreshing={fetching}
         refreshTooltip={t('communications.dashboard.refresh')}
       />
+
+      <Grid container spacing={2} className={classes.filters}>
+        <Grid item xs={12} sm={3}>
+          <PublishedComponent pubRef="core.DatePicker" module="communications" label="communications.dashboard.dateFrom"
+            value={filters.dateFrom} onChange={setFilter('dateFrom')} />
+        </Grid>
+        <Grid item xs={12} sm={3}>
+          <PublishedComponent pubRef="core.DatePicker" module="communications" label="communications.dashboard.dateTo"
+            value={filters.dateTo} onChange={setFilter('dateTo')} />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <PublishedComponent pubRef="location.LocationPicker" value={filters.location} onChange={setFilter('location')} />
+        </Grid>
+      </Grid>
 
       <ProgressOrError progress={fetching && !summary} error={error} />
 

@@ -5,16 +5,18 @@ import {
   Table, TableHead, TableRow, TableCell, TableBody, IconButton, Button, Tooltip, TextField,
 } from '@material-ui/core';
 import DeleteIcon from '@material-ui/icons/Delete';
+import EditIcon from '@material-ui/icons/Edit';
 import { useModulesManager, useTranslations, journalize } from '@openimis/fe-core';
 import { fetchObjectives, saveObjective, deleteObjective } from '../actions';
 
 const EMPTY = { description: '', indicator: '', targetValue: '', achievedValue: '' };
 function ObjectivesPanel({
-  activityId, readOnly, objectives, submittingMutation, mutation, fetchObjectives, saveObjective, deleteObjective, journalize,
+  activityId, readOnly, resultsOnly, objectives, submittingMutation, mutation, fetchObjectives, saveObjective, deleteObjective, journalize,
 }) {
   const modulesManager = useModulesManager();
   const { formatMessage } = useTranslations('communications', modulesManager);
   const [row, setRow] = useState(EMPTY);
+  const [editing, setEditing] = useState(null);
   const prev = useRef();
   useEffect(() => { if (activityId) fetchObjectives(activityId); }, [activityId]);
   useEffect(() => { if (prev.current && !submittingMutation) { journalize(mutation); if (activityId) fetchObjectives(activityId); } }, [submittingMutation]);
@@ -24,7 +26,14 @@ function ObjectivesPanel({
     saveObjective({ ...row, activityId }, formatMessage('communications.objective.add'));
     setRow(EMPTY);
   };
+  const save = () => {
+    saveObjective({ ...editing, activityId }, formatMessage('communications.objective.update'));
+    setEditing(null);
+  };
   const cell = (k, ph) => (<TextField value={row[k]} placeholder={ph} onChange={(e) => setRow({ ...row, [k]: e.target.value })} />);
+  const editCell = (k, locked) => (
+    <TextField value={editing[k] ?? ''} disabled={locked} onChange={(e) => setEditing({ ...editing, [k]: e.target.value })} />
+  );
   return (
     <Table size="small">
       <TableHead><TableRow>
@@ -35,20 +44,38 @@ function ObjectivesPanel({
         <TableCell />
       </TableRow></TableHead>
       <TableBody>
-        {(objectives ?? []).map((o) => (
+        {(objectives ?? []).map((o) => (editing?.id === o.id ? (
+          <TableRow key={o.id}>
+            <TableCell>{editCell('description', resultsOnly)}</TableCell>
+            <TableCell>{editCell('indicator', resultsOnly)}</TableCell>
+            <TableCell>{editCell('targetValue', resultsOnly)}</TableCell>
+            <TableCell>{editCell('achievedValue', false)}</TableCell>
+            <TableCell>
+              <Button size="small" color="primary" variant="contained" onClick={save} disabled={!editing.description}>{formatMessage('communications.save')}</Button>
+              <Button size="small" onClick={() => setEditing(null)}>{formatMessage('communications.cancel')}</Button>
+            </TableCell>
+          </TableRow>
+        ) : (
           <TableRow key={o.id}>
             <TableCell>{o.description}</TableCell>
             <TableCell>{o.indicator}</TableCell>
             <TableCell>{o.targetValue}</TableCell>
             <TableCell>{o.achievedValue}</TableCell>
             <TableCell>{!readOnly && (
-              <Tooltip title={formatMessage('deleteButton.tooltip')}>
-                <IconButton size="small" onClick={() => deleteObjective(o, formatMessage('communications.objective.delete'))}><DeleteIcon /></IconButton>
-              </Tooltip>)}
+              <>
+                <Tooltip title={formatMessage('communications.objective.update')}>
+                  <IconButton size="small" onClick={() => setEditing({ ...o })}><EditIcon /></IconButton>
+                </Tooltip>
+                {!resultsOnly && (
+                  <Tooltip title={formatMessage('deleteButton.tooltip')}>
+                    <IconButton size="small" onClick={() => deleteObjective(o, formatMessage('communications.objective.delete'))}><DeleteIcon /></IconButton>
+                  </Tooltip>
+                )}
+              </>)}
             </TableCell>
           </TableRow>
-        ))}
-        {!readOnly && (
+        )))}
+        {!readOnly && !resultsOnly && (
           <TableRow>
             <TableCell>{cell('description', 'objective')}</TableCell>
             <TableCell>{cell('indicator', 'indicator')}</TableCell>
